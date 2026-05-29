@@ -1,0 +1,31 @@
+{
+  "name": "clean-cardano-wallet",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hydra-sdk/cardano-wasm": "^0.0.7",
+    "@hydra-sdk/core": "^1.3.2",
+    "@pinia/nuxt": "^0.11.3",
+    "nuxt": "^4.4.6",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.34",
+    "vue-router": "^5.0.7"
+  },
+  "devDependencies": {
+    "@hydra-sdk/transaction": "^1.1.8",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@types/node": "^20.11.24",
+    "rollup": "^4.60.4",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0",
+    "vitest": "^4.1.7"
+  }
+}
