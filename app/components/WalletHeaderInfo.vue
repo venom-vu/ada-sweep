@@ -112,7 +112,7 @@ onUnmounted(() => {
             v-else
             class="w-6 h-6 rounded bg-slate-950 border border-white/10 flex items-center justify-center font-bold text-cyan-400 text-[10px]"
           >
-            {{ walletStore.walletName ? walletStore.walletName[0].toUpperCase() : 'W' }}
+            {{ walletStore.walletName ? walletStore.walletName.charAt(0).toUpperCase() : 'W' }}
           </div>
         </div>
 
@@ -162,7 +162,7 @@ onUnmounted(() => {
               v-else
               class="w-10 h-10 rounded bg-slate-900 border border-white/10 flex items-center justify-center font-bold text-cyan-400 text-sm"
             >
-              {{ walletStore.walletName ? walletStore.walletName[0].toUpperCase() : 'W' }}
+              {{ walletStore.walletName ? walletStore.walletName.charAt(0).toUpperCase() : 'W' }}
             </div>
             <div class="flex flex-col">
               <h4 class="text-sm font-bold text-white leading-tight">
