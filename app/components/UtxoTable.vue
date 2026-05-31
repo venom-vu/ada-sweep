@@ -149,107 +149,110 @@ const formatAda = (lovelace: number) => {
       <button @click="maxAdaFilter = ''" class="mt-3.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all">Clear active filter</button>
     </div>
 
-    <!-- Scrollable table (Desktop/Tablet View) -->
-    <div v-else class="hidden md:block table-scroll overflow-x-auto overflow-y-auto max-h-[480px] pr-1">
-      <table class="w-full text-left">
-        <thead class="sticky top-0 bg-[rgba(10,14,24,0.95)]">
-          <tr class="border-b border-white/[0.12] text-slate-500 text-xs font-medium uppercase tracking-wider">
-            <th class="pb-3 pr-4 w-10">
-              <input
-                type="checkbox"
-                :checked="isAllSelected"
-                @change="toggleSelectAll"
-                class="checkbox-custom"
-              />
-            </th>
-            <th class="pb-3 px-4">Transaction Hash & Index</th>
-            <th class="pb-3 px-4">ADA Value</th>
-            <th class="pb-3 pl-4">Native Assets</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-white/[0.04] text-sm">
-          <tr
-            v-for="utxo in filteredUtxos"
-            :key="`${utxo.txHash}#${utxo.index}`"
-            class="cursor-pointer transition-colors hover:bg-white/[0.02]"
-            :class="{ 'bg-cyan-500/[0.025]': optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`) }"
-            @click="optimizerStore.toggleSelection(utxo)"
-          >
-            <td class="py-4 pr-4" @click.stop>
+    <!-- Scrollable views (Responsive Layout) -->
+    <template v-else>
+      <!-- Scrollable table (Desktop/Tablet View) -->
+      <div class="hidden md:block table-scroll overflow-x-auto overflow-y-auto max-h-[480px] pr-1">
+        <table class="w-full text-left">
+          <thead class="sticky top-0 bg-[rgba(10,14,24,0.95)]">
+            <tr class="border-b border-white/[0.12] text-slate-500 text-xs font-medium uppercase tracking-wider">
+              <th class="pb-3 pr-4 w-10">
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  @change="toggleSelectAll"
+                  class="checkbox-custom"
+                />
+              </th>
+              <th class="pb-3 px-4">Transaction Hash & Index</th>
+              <th class="pb-3 px-4">ADA Value</th>
+              <th class="pb-3 pl-4">Native Assets</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/[0.04] text-sm">
+            <tr
+              v-for="utxo in filteredUtxos"
+              :key="`${utxo.txHash}#${utxo.index}`"
+              class="cursor-pointer transition-colors hover:bg-white/[0.02]"
+              :class="{ 'bg-cyan-500/[0.025]': optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`) }"
+              @click="optimizerStore.toggleSelection(utxo)"
+            >
+              <td class="py-4 pr-4" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`)"
+                  @change="optimizerStore.toggleSelection(utxo)"
+                  class="checkbox-custom"
+                />
+              </td>
+              <td class="py-4 px-4 font-mono text-cyan-400 text-[13px]">
+                <div class="flex items-center gap-1.5">
+                  <span class="hover:text-cyan-300 transition-colors cursor-help" :title="utxo.txHash">
+                    {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-4) }}
+                  </span>
+                  <strong class="text-blue-400 bg-white/5 px-1 py-0.5 rounded text-xs flex-shrink-0">#{{ utxo.index }}</strong>
+                </div>
+              </td>
+              <td class="py-4 px-4 font-bold font-display text-white">
+                {{ formatAda(utxo.lovelace) }} ADA
+              </td>
+              <td class="py-4 pl-4">
+                <span v-if="Object.keys(utxo.assets).length === 0" class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Pure ADA
+                </span>
+                <span v-else class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  {{ Object.keys(utxo.assets).length }} Assets
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile view (Stacked List View with Lazy Load) -->
+      <div class="block md:hidden overflow-y-auto max-h-[320px] pr-1 space-y-3">
+        <div
+          v-for="utxo in filteredUtxos"
+          :key="`${utxo.txHash}#${utxo.index}`"
+          class="mobile-utxo-item p-4 border border-white/5 bg-white/[0.01] rounded-btn flex flex-col gap-2 transition-colors cursor-pointer"
+          :class="{ 'bg-cyan-500/[0.025] !border-cyan-500/20': optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`) }"
+          @click="optimizerStore.toggleSelection(utxo)"
+        >
+          <!-- Row 1: TxHash & Checkbox -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+              <span class="hover:text-cyan-300 transition-colors">
+                {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-6) }}
+              </span>
+              <strong class="text-blue-400 bg-white/5 px-1 py-0.5 rounded text-[10px]">#{{ utxo.index }}</strong>
+            </div>
+            <div @click.stop>
               <input
                 type="checkbox"
                 :checked="optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`)"
                 @change="optimizerStore.toggleSelection(utxo)"
                 class="checkbox-custom"
               />
-            </td>
-            <td class="py-4 px-4 font-mono text-cyan-400 text-[13px]">
-              <div class="flex items-center gap-1.5">
-                <span class="hover:text-cyan-300 transition-colors cursor-help" :title="utxo.txHash">
-                  {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-4) }}
-                </span>
-                <strong class="text-blue-400 bg-white/5 px-1 py-0.5 rounded text-xs flex-shrink-0">#{{ utxo.index }}</strong>
-              </div>
-            </td>
-            <td class="py-4 px-4 font-bold font-display text-white">
+            </div>
+          </div>
+
+          <!-- Row 2: Value & Assets -->
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-white font-mono">
               {{ formatAda(utxo.lovelace) }} ADA
-            </td>
-            <td class="py-4 pl-4">
-              <span v-if="Object.keys(utxo.assets).length === 0" class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            </span>
+            <div>
+              <span v-if="Object.keys(utxo.assets).length === 0" class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-sans">
                 Pure ADA
               </span>
-              <span v-else class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span v-else class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans">
                 {{ Object.keys(utxo.assets).length }} Assets
               </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Mobile view (Stacked List View with Lazy Load) -->
-    <div v-else class="block md:hidden overflow-y-auto max-h-[320px] pr-1 space-y-3">
-      <div
-        v-for="utxo in filteredUtxos"
-        :key="`${utxo.txHash}#${utxo.index}`"
-        class="mobile-utxo-item p-4 border border-white/5 bg-white/[0.01] rounded-btn flex flex-col gap-2 transition-colors cursor-pointer"
-        :class="{ 'bg-cyan-500/[0.025] !border-cyan-500/20': optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`) }"
-        @click="optimizerStore.toggleSelection(utxo)"
-      >
-        <!-- Row 1: TxHash & Checkbox -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-            <span class="hover:text-cyan-300 transition-colors">
-              {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-6) }}
-            </span>
-            <strong class="text-blue-400 bg-white/5 px-1 py-0.5 rounded text-[10px]">#{{ utxo.index }}</strong>
-          </div>
-          <div @click.stop>
-            <input
-              type="checkbox"
-              :checked="optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`)"
-              @change="optimizerStore.toggleSelection(utxo)"
-              class="checkbox-custom"
-            />
-          </div>
-        </div>
-
-        <!-- Row 2: Value & Assets -->
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-white font-mono">
-            {{ formatAda(utxo.lovelace) }} ADA
-          </span>
-          <div>
-            <span v-if="Object.keys(utxo.assets).length === 0" class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-sans">
-              Pure ADA
-            </span>
-            <span v-else class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans">
-              {{ Object.keys(utxo.assets).length }} Assets
-            </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
