@@ -18,6 +18,44 @@ export const useWalletStore = defineStore("wallet", () => {
   const error = ref<string | null>(null);
   const isDemoMode = ref(false);
   const showConnectionModal = ref(false);
+  const isSessionChecked = ref(false);
+
+  // Network selection state: 'mainnet' | 'preprod' (Mainnet is disabled)
+  const selectedNetwork = ref<'mainnet' | 'preprod'>('preprod');
+
+  const setNetwork = (network: 'mainnet' | 'preprod') => {
+    if (network === 'mainnet') {
+      console.warn("Cardano Mainnet is currently disabled.");
+      return;
+    }
+    selectedNetwork.value = network;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adasweep-network", network);
+    }
+  };
+
+  const initNetwork = () => {
+    selectedNetwork.value = 'preprod';
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adasweep-network", "preprod");
+      
+      const savedSession = sessionStorage.getItem("adasweep-session-wallet");
+      if (!savedSession) {
+        isSessionChecked.value = true;
+      }
+    } else {
+      isSessionChecked.value = true;
+    }
+  };
+
+  const networkMismatch = computed(() => {
+    if (!isConnected.value || networkId.value === null || !selectedNetwork.value) {
+      return false;
+    }
+    const isWalletMainnet = networkId.value === 1;
+    const isAppMainnet = selectedNetwork.value === 'mainnet';
+    return isWalletMainnet !== isAppMainnet;
+  });
 
   // RAW UTXO List
   const utxos = ref<UTXO[]>([]);
@@ -38,12 +76,17 @@ export const useWalletStore = defineStore("wallet", () => {
 
   // Mock UTXOs for Demo Mode
   const getMockUtxos = (): UTXO[] => {
+    const isMainnet = selectedNetwork.value === 'mainnet';
+    const address = isMainnet
+      ? "addr1qy78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0mkh2wvyvquglqqqqgqys59g27e"
+      : "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0mkh2wvyvquglqqqqgqyrglry";
+
     return [
       {
         txHash:
           "a5c0b11e2f7b49463e80829bc1e88863f683a54b9f291079d863f733f38012ef",
         index: 0,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 250000000, // 250 ADA
         assets: {},
       },
@@ -51,7 +94,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "b7c0b11e2f7b49463e80829bc1e88863f683a54b9f291079d863f733f38013ef",
         index: 1,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 100000000, // 100 ADA
         assets: {},
       },
@@ -59,7 +102,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "e1d1e44f8a3d59463e80829bc1e88863f683a54b9f291079d863f733f38014ab",
         index: 0,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 50500000, // 50.5 ADA
         assets: {},
       },
@@ -67,7 +110,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
         index: 0,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1800000, // 1.8 ADA
         assets: {
           "da86815a519c799545591e0d758c8590ef595303c734b2cfc1b827e8.5370616365436f696e73": 5000, // Whitelisted SpaceCoins
@@ -77,7 +120,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8",
         index: 3,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1500000, // 1.5 ADA
         assets: {
           "7492c1ad3b5c799545591e0d758c8590ef595303c734b2cfc1b827e8.5363616d546f6b656e41": 1000000, // ScamTokenA
@@ -87,7 +130,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2",
         index: 2,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1300000, // 1.3 ADA
         assets: {
           "a1b2c3d4e5f6799545591e0d758c8590ef595303c734b2cfc1b827e8.46616b6541697264726f70": 1, // FakeAirdropNFT
@@ -97,7 +140,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b",
         index: 1,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 900000, // 0.9 ADA (Dust)
         assets: {},
       },
@@ -105,7 +148,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3b",
         index: 0,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1200000, // 1.2 ADA (Dust)
         assets: {},
       },
@@ -113,7 +156,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e",
         index: 4,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1700000, // 1.7 ADA
         assets: {
           "da86815a519c799545591e0d758c8590ef595303c734b2cfc1b827e8.5370616365436f696e73": 2000, // SpaceCoins
@@ -123,7 +166,7 @@ export const useWalletStore = defineStore("wallet", () => {
         txHash:
           "5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d",
         index: 0,
-        address: "addr_test1qr78y9zv9g5k27xpfl9wsmph938l2s7l7rshq8f0m...",
+        address,
         lovelace: 1600000, // 1.6 ADA
         assets: {
           "112233445566799545591e0d758c8590ef595303c734b2cfc1b827e8.4a756e6b4d656d65": 42000000, // JunkMeme
@@ -187,11 +230,22 @@ export const useWalletStore = defineStore("wallet", () => {
       // Get current network: 0 = Testnet, 1 = Mainnet
       networkId.value = await api.getNetworkId();
 
+      if (networkId.value === 1) {
+        throw new Error("Cardano Mainnet is currently disabled. Please switch your wallet to Preprod testnet.");
+      }
+
+      setNetwork('preprod');
+
       // Fetch Address (Standard unused or change address)
       const changeAddrHex = await api.getChangeAddress();
       walletAddress.value = decodeAddress(changeAddrHex, wasm);
 
       isConnected.value = true;
+
+      // Save to sessionStorage for page-refresh auto-connection
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("adasweep-session-wallet", name);
+      }
 
       // Fetch Real UTXOs
       await fetchUtxos();
@@ -199,6 +253,9 @@ export const useWalletStore = defineStore("wallet", () => {
       console.error(err);
       error.value = err.message || "Failed to connect wallet.";
       isConnected.value = false;
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("adasweep-session-wallet");
+      }
     } finally {
       isConnecting.value = false;
     }
@@ -214,6 +271,35 @@ export const useWalletStore = defineStore("wallet", () => {
     walletApi.value = null;
     error.value = null;
     isDemoMode.value = false;
+
+    // Clear session storage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("adasweep-session-wallet");
+    }
+  };
+
+  // Session-based auto-reconnect action
+  const tryAutoConnect = async () => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("adasweep-session-wallet");
+      if (saved) {
+        if (!isConnected.value && !isConnecting.value) {
+          try {
+            await connectWallet(saved);
+          } catch (e) {
+            console.error("Auto connect failed:", e);
+          } finally {
+            isSessionChecked.value = true;
+          }
+        } else {
+          isSessionChecked.value = true;
+        }
+      } else {
+        isSessionChecked.value = true;
+      }
+    } else {
+      isSessionChecked.value = true;
+    }
   };
 
   // Fetch UTXOs from wallet API
@@ -324,6 +410,11 @@ export const useWalletStore = defineStore("wallet", () => {
     error,
     isDemoMode,
     showConnectionModal,
+    isSessionChecked,
+    selectedNetwork,
+    setNetwork,
+    initNetwork,
+    networkMismatch,
     utxos,
     walletApi,
     balanceLovelace,
@@ -331,6 +422,7 @@ export const useWalletStore = defineStore("wallet", () => {
     totalUtxoCount,
     connectWallet,
     disconnectWallet,
+    tryAutoConnect,
     fetchUtxos,
     loadWasm,
     toHex,

@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import WalletConnection from '~/components/WalletConnection.vue'
+import WalletHeaderInfo from '~/components/WalletHeaderInfo.vue'
 </script>
 
 <template>
   <div class="min-h-screen bg-fintech-black text-slate-100 font-sans flex flex-col relative">
     
-    <!-- Top Landing Page Header (when disconnected) -->
+    <!-- Top Landing Page Header -->
     <header class="w-full flex items-center justify-between px-6 sm:px-10 h-20 bg-fintech-black/60 border-b border-white/5 sticky top-0 z-40 backdrop-blur-md">
       <NuxtLink to="/" class="flex items-center gap-2">
         <img src="/logo-text.png" class="h-16 lg:h-20 object-contain" alt="ADASweep Logo" />
       </NuxtLink>
       <ClientOnly>
-        <WalletConnection />
+        <WalletHeaderInfo />
       </ClientOnly>
     </header>
 
@@ -21,6 +21,11 @@ import WalletConnection from '~/components/WalletConnection.vue'
       <div class="absolute top-[20%] right-[10%] w-[350px] h-[350px] rounded-full bg-slate-500/3 blur-[120px] pointer-events-none"></div>
       <slot />
     </main>
+
+    <ClientOnly>
+      <AppFooter />
+      <NetworkWelcomeModal />
+    </ClientOnly>
 
   </div>
 </template>

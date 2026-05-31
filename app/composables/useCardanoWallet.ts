@@ -40,7 +40,7 @@ export function useCardanoWallet() {
       if (walletObj) {
         wallets.push({
           name: wallet.key,
-          displayName: walletObj.name || wallet.display,
+          displayName: wallet.display,
           icon: walletObj.icon || '',
           apiVersion: walletObj.apiVersion || '',
           isInstalled: true

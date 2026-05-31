@@ -9,6 +9,8 @@ const walletStore = useWalletStore();
 // If disconnected, automatically navigate back to landing page.
 // Otherwise, set page layout to 'dashboard'.
 watchEffect(() => {
+  if (!walletStore.isSessionChecked) return;
+
   if (!walletStore.isConnected) {
     navigateTo("/");
   } else {
@@ -20,7 +22,32 @@ watchEffect(() => {
 <template>
   <div class="space-y-8 animate-fade-in">
     <ClientOnly>
-      <div v-if="walletStore.isConnected" class="space-y-8">
+      <!-- SESSION AUTO-CONNECTION RESTORING SCREEN -->
+      <div
+        v-if="!walletStore.isSessionChecked"
+        class="max-w-xl mx-auto mt-20 text-center rounded-2xl border border-white/[0.06] bg-[rgba(10,14,24,0.72)] backdrop-blur-xl p-14 flex flex-col items-center gap-6"
+      >
+        <div class="relative flex items-center justify-center">
+          <!-- Outer pulsing glow ring -->
+          <div class="absolute w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 animate-pulse"></div>
+          <!-- Spinning loading indicator -->
+          <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-xl font-bold font-display text-white tracking-wide">
+            Restoring Session
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm max-w-xs leading-relaxed mx-auto">
+            Verifying your wallet session connection. Please hold on.
+          </p>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT PANEL -->
+      <div v-else-if="walletStore.isConnected" class="space-y-8">
         <!-- Wallet Health primary gauge & report -->
         <WalletHealth />
 
@@ -151,7 +178,8 @@ watchEffect(() => {
               >{{ walletStore.utxos.length }} UTXOs found</span
             >
           </div>
-          <div class="overflow-x-auto">
+          <!-- Desktop/Tablet Table view -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr
@@ -184,7 +212,7 @@ watchEffect(() => {
                   <td class="py-4 px-4 text-right font-semibold text-white">
                     {{ (utxo.lovelace / 1000000).toFixed(2) }} ADA
                   </td>
-                  <td class="py-4 pl-4 text-right">
+                  <td class="py-4 text-right">
                     <span
                       v-if="Object.keys(utxo.assets).length === 0"
                       class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase"
@@ -202,6 +230,62 @@ watchEffect(() => {
               </tbody>
             </table>
           </div>
+
+          <!-- Mobile Stacked Card view -->
+          <div class="block md:hidden space-y-3">
+            <div
+              v-for="utxo in walletStore.utxos.slice(0, 5)"
+              :key="utxo.txHash"
+              class="p-4 border border-white/5 bg-white/[0.01] rounded-xl flex flex-col gap-3"
+            >
+              <!-- Row 1: Shortened Hash & Index -->
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono text-slate-400">
+                  {{ utxo.txHash.slice(0, 10) }}...{{ utxo.txHash.slice(-8) }}
+                </span>
+                <span class="text-blue-400 bg-white/5 px-2 py-0.5 rounded font-mono font-bold text-[10px]">
+                  #{{ utxo.index }}
+                </span>
+              </div>
+              
+              <!-- Divider -->
+              <div class="h-px bg-white/5"></div>
+
+              <!-- Row 2: Lovelace & ADA Value -->
+              <div class="flex justify-between items-center">
+                <div class="flex flex-col text-left">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">Lovelace</span>
+                  <span class="font-mono text-xs text-slate-300 mt-0.5">{{ utxo.lovelace.toLocaleString() }}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">ADA Value</span>
+                  <span class="font-bold text-white text-sm font-mono mt-0.5 block">
+                    {{ (utxo.lovelace / 1000000).toFixed(2) }} ADA
+                  </span>
+                </div>
+              </div>
+
+              <!-- Row 3: Contents badge -->
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400">Contents</span>
+                <div>
+                  <span
+                    v-if="Object.keys(utxo.assets).length === 0"
+                    class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase"
+                  >
+                    Pure ADA
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase"
+                  >
+                    {{ Object.keys(utxo.assets).length }} Assets
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div
             v-if="walletStore.utxos.length > 5"
             class="mt-6 pt-4 border-t border-white/5 text-center text-xs text-slate-500"

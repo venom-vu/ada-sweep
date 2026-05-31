@@ -124,15 +124,15 @@ const formatAda = (lovelace: number) => {
       </div>
 
       <!-- Action Buttons Scoped to Filter -->
-      <div class="flex items-center gap-2">
+      <div class="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:w-auto">
         <button
-          class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all duration-200"
+          class="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all duration-200"
           @click="selectFiltered"
         >
           Select Filtered ({{ filteredUtxos.length }})
         </button>
         <button
-          class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white/5 border border-white/[0.08] text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+          class="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold rounded-xl bg-white/5 border border-white/[0.08] text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200"
           @click="deselectFiltered"
         >
           Deselect Filtered
@@ -164,8 +164,8 @@ const formatAda = (lovelace: number) => {
                   class="checkbox-custom"
                 />
               </th>
-              <th class="pb-3 px-4">Transaction Hash & Index</th>
-              <th class="pb-3 px-4">ADA Value</th>
+              <th class="pb-3 px-4">Tx Hash</th>
+              <th class="pb-3 px-4">ADA</th>
               <th class="pb-3 pl-4">Native Assets</th>
             </tr>
           </thead>
