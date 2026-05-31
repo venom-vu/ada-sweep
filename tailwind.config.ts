@@ -24,11 +24,33 @@ export default <Config>{
           blue: '#3b82f6',
           emerald: '#10b981',
           rose: '#f43f5e',
+        },
+        health: {
+          rose: {
+            bg: 'rgba(244, 63, 94, 0.05)',
+            border: 'rgba(244, 63, 94, 0.1)',
+            text: '#fb7185'
+          },
+          amber: {
+            bg: 'rgba(245, 158, 11, 0.05)',
+            border: 'rgba(245, 158, 11, 0.1)',
+            text: '#fbbf24'
+          },
+          emerald: {
+            bg: 'rgba(16, 185, 129, 0.05)',
+            border: 'rgba(16, 185, 129, 0.1)',
+            text: '#34d399'
+          }
         }
       },
+      borderRadius: {
+        'card': '16px',
+        'btn': '12px'
+      },
       fontFamily: {
-        sans: ['Inter', 'Geist', 'Satoshi', 'sans-serif'],
-        display: ['Geist', 'Satoshi', 'sans-serif']
+        sans: ['Outfit', 'Inter', 'Geist', 'Satoshi', 'sans-serif'],
+        display: ['Outfit', 'Geist', 'Satoshi', 'sans-serif'],
+        mono: ['Space Mono', 'JetBrains Mono', 'monospace']
       },
       boxShadow: {
         'fintech-glow': '0 4px 20px rgba(59, 130, 246, 0.05)',
