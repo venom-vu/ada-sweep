@@ -1,48 +1,8 @@
 import { defineNuxtConfig } from 'nuxt/config'
 import wasm from 'vite-plugin-wasm'
 import topLevelAwait from 'vite-plugin-top-level-await'
-import fs from 'node:fs'
-import path from 'node:path'
 
-const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://adasweep.app'
-
-// Auto-generate static robots.txt and sitemap.xml inside the public directory
-const publicDir = path.resolve(process.cwd(), 'public')
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true })
-}
-fs.writeFileSync(
-  path.join(publicDir, 'robots.txt'),
-  `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`,
-  'utf-8'
-)
-fs.writeFileSync(
-  path.join(publicDir, 'sitemap.xml'),
-  `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>${siteUrl}/</loc>
-        <lastmod>2026-05-29</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>1.0</priority>
-    </url>
-    <url>
-        <loc>${siteUrl}/optimizer</loc>
-        <lastmod>2026-05-29</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc>${siteUrl}/cleaner</loc>
-        <lastmod>2026-05-29</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-</urlset>
-`,
-  'utf-8'
-)
-
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://adasweep.xyz'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default (defineNuxtConfig as any)({
   compatibilityDate: '2025-07-15',
@@ -81,7 +41,6 @@ export default (defineNuxtConfig as any)({
 
   runtimeConfig: {
     public: {
-      blockfrostProjectId: process.env.NUXT_PUBLIC_BLOCKFROST_PROJECT_ID || '',
       siteUrl
     }
   },
