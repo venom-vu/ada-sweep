@@ -26,14 +26,17 @@ const handleReset = () => {
     <!-- ACTIVE SIMULATION CONTROL -->
     <div v-else class="flex flex-col gap-5">
       <!-- Statistics Summary Box -->
-      <div class="flex justify-between items-center bg-white/[0.02] border border-white/[0.08] rounded-xl px-5 py-3.5">
+      <div class="flex flex-wrap justify-between items-center gap-3 bg-white/[0.02] border border-white/[0.08] rounded-xl px-5 py-3.5">
         <div class="text-left">
-          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider">Selected Inputs</span>
-          <span class="block text-xl font-black font-display text-white mt-0.5">{{ optimizerStore.selectedKeys.length }} UTXOs</span>
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Selected Inputs</span>
+          <span class="block text-xl font-black font-heading text-white mt-0.5">{{ optimizerStore.selectedKeys.length }} UTXOs</span>
         </div>
-        <div class="text-right">
-          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider">Aggregated Balance</span>
-          <span class="block text-xl font-black font-display text-white mt-0.5">{{ optimizerStore.totalSelectedAda.toFixed(2) }} ADA</span>
+        <div class="text-left sm:text-right">
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Aggregated Balance</span>
+          <span class="block text-xl font-black font-heading text-white mt-0.5">
+            {{ optimizerStore.totalSelectedAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
         </div>
       </div>
 
@@ -41,11 +44,17 @@ const handleReset = () => {
       <div class="flex flex-col gap-2 font-display">
         <div class="flex justify-between text-sm text-slate-400">
           <span>Estimated Network Fee</span>
-          <span>{{ optimizerStore.estimatedFeeAda.toFixed(4) }} ADA</span>
+          <span>
+            {{ optimizerStore.estimatedFeeAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
         </div>
         <div class="flex justify-between text-base font-bold border-t border-dashed border-white/[0.08] pt-2 mt-1">
           <span class="text-white">Recovered Net ADA</span>
-          <span class="text-emerald-400">+{{ optimizerStore.recoverableAda.toFixed(4) }} ADA</span>
+          <span class="text-emerald-400">
+            +{{ optimizerStore.recoverableAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-emerald-500/80 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
         </div>
       </div>
 
@@ -68,7 +77,7 @@ const handleReset = () => {
       <!-- ACTION SUBMIT BUTTON -->
       <button
         v-if="optimizerStore.batchStatus === 'idle'"
-        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:opacity-90 text-sm font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white hover:opacity-90 shadow-lg shadow-violet-600/20 active:scale-95 text-sm font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         :disabled="optimizerStore.isExecuting"
         @click="handleConsolidate"
       >
@@ -93,13 +102,13 @@ const handleReset = () => {
 
         <!-- Progress Bar -->
         <div>
-          <div class="flex justify-between text-xs text-slate-400 mb-1.5">
+          <div class="flex justify-between text-xs text-slate-400 mb-1.5 font-sans">
             <span>Overall Progress</span>
-            <span class="font-display">Batch {{ optimizerStore.currentBatchIndex + 1 }} / {{ optimizerStore.totalBatches }}</span>
+            <span class="font-heading">Batch {{ optimizerStore.currentBatchIndex + 1 }} / {{ optimizerStore.totalBatches }}</span>
           </div>
           <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
             <div
-              class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 progress-fill"
+              class="h-full bg-gradient-to-r from-violet-500 to-indigo-500 progress-fill"
               :style="{ width: ((optimizerStore.currentBatchIndex + (optimizerStore.batchStatus === 'success' ? 1 : 0)) / optimizerStore.totalBatches * 100) + '%' }"
             ></div>
           </div>
@@ -112,7 +121,7 @@ const handleReset = () => {
             :key="idx"
             class="flex justify-between items-center px-3 py-2.5 rounded-lg border text-xs transition-all duration-200"
             :class="{
-              'bg-cyan-500/[0.03] border-cyan-500/20 text-white': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
+              'bg-violet-500/[0.03] border-violet-500/20 text-white': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
               'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-400': optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success',
               'bg-white/[0.01] border-white/[0.08] text-slate-400': !(optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing') && !(optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success')
             }"
@@ -121,7 +130,7 @@ const handleReset = () => {
               <span
                 class="w-1.5 h-1.5 rounded-full"
                 :class="{
-                  'bg-cyan-400 shadow-[0_0_6px_#00f2fe] animate-pulse': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
+                  'bg-violet-400 shadow-[0_0_6px_#8b5cf6] animate-pulse': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
                   'bg-emerald-400': optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success',
                   'bg-slate-600': !(optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing') && !(optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success')
                 }"
@@ -142,7 +151,7 @@ const handleReset = () => {
           <div class="max-h-28 overflow-y-auto flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-lg border border-white/[0.06]">
             <div v-for="(hash, index) in optimizerStore.transactionHashes" :key="hash" class="flex justify-between text-xs font-mono">
               <span class="text-slate-400">Batch {{ index + 1 }}:</span>
-              <a :href="'https://preprod.cardanoscan.io/transaction/' + hash" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">
+              <a :href="'https://preprod.cardanoscan.io/transaction/' + hash" target="_blank" class="text-violet-400 hover:text-violet-300 underline">
                 {{ hash.slice(0, 16) }}...{{ hash.slice(-4) }}
               </a>
             </div>

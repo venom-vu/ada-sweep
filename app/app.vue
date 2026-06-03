@@ -3,12 +3,22 @@ import "~/assets/css/tailwind.css";
 import "~/assets/css/app.css";
 import { useWalletStore } from "~/stores/wallet";
 import { onMounted } from "vue";
+import { useRequestURL, useSeoMeta } from "#imports";
 
 const walletStore = useWalletStore();
 
 onMounted(async () => {
   walletStore.initNetwork();
   await walletStore.tryAutoConnect();
+});
+
+const url = useRequestURL();
+const ogImageUrl = `${url.origin}/og-image.png`;
+
+useSeoMeta({
+  ogImage: ogImageUrl,
+  twitterImage: ogImageUrl,
+  ogUrl: url.href,
 });
 </script>
 

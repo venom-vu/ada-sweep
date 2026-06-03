@@ -69,7 +69,7 @@ export const useWalletStore = defineStore("wallet", () => {
   });
 
   const balanceAda = computed(() => {
-    return (balanceLovelace.value / 1000000).toFixed(6);
+    return (balanceLovelace.value / 1000000).toFixed(2);
   });
 
   const totalUtxoCount = computed(() => utxos.value.length);

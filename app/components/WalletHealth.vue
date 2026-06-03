@@ -46,10 +46,10 @@ const strokeDashoffset = computed(() => {
             ></circle>
           </svg>
           <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-3xl font-black font-mono" :class="scoreColorClass">
+            <span class="text-3xl font-black font-heading" :class="scoreColorClass">
               {{ score }}%
             </span>
-            <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">
+            <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1 font-sans">
               Wallet Health
             </span>
           </div>
@@ -80,8 +80,8 @@ const strokeDashoffset = computed(() => {
         <div class="w-full max-w-xs flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 mt-2">
           <span class="text-xs text-slate-400 font-sans">Potential Improvement</span>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-xs font-mono text-cyan-400">{{ score }} &rarr; 95</span>
-            <span class="text-[9px] font-black font-mono bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">
+            <span class="font-bold text-xs font-mono text-amber-400">{{ score }} &rarr; 95</span>
+            <span class="text-[10px] font-semibold font-sans bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-lg border border-amber-500/20">
               +{{ Math.max(0, 95 - score) }} HP
             </span>
           </div>
@@ -97,19 +97,22 @@ const strokeDashoffset = computed(() => {
           <div class="flex justify-between items-center text-sm font-sans">
             <span class="text-slate-400">Total Wallet Balance</span>
             <span class="font-bold text-white font-mono">
-              {{ parseFloat(walletStore.balanceAda).toFixed(2) }} ADA
+              {{ parseFloat(walletStore.balanceAda).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+              <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
             </span>
           </div>
           <div class="flex justify-between items-center text-sm font-sans">
             <span class="text-slate-400">Usable ADA</span>
             <span class="font-bold text-emerald-400 font-mono">
-              {{ cleanerStore.usableAda.toFixed(2) }} ADA
+              {{ cleanerStore.usableAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+              <span class="text-emerald-500/80 text-[10px] font-medium ml-0.5">ADA</span>
             </span>
           </div>
           <div class="flex justify-between items-center text-sm font-sans">
             <span class="text-slate-400">Locked ADA</span>
             <span class="font-bold text-rose-400 font-mono">
-              {{ cleanerStore.lockedAda.toFixed(2) }} ADA
+              {{ cleanerStore.lockedAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+              <span class="text-rose-500/80 text-[10px] font-medium ml-0.5">ADA</span>
             </span>
           </div>
           <div class="h-px bg-white/[0.08]"></div>
@@ -124,11 +127,11 @@ const strokeDashoffset = computed(() => {
     <!-- 3 Dynamic Insight Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/[0.06] pt-6">
       <!-- Insight 1: UTXO Fragmentation -->
-      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[110px]">
+      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-violet-500/20 transition-all duration-300 flex flex-col justify-between min-h-[110px]">
         <div>
           <div class="flex items-center justify-between mb-2">
             <span class="text-[9px] font-bold text-slate-500 uppercase font-sans">Fragmentation</span>
-            <span :class="walletStore.totalUtxoCount > 8 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase font-sans">
+            <span :class="walletStore.totalUtxoCount > 8 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border uppercase font-sans">
               {{ walletStore.totalUtxoCount > 8 ? 'Suboptimal' : 'Optimized' }}
             </span>
           </div>
@@ -140,11 +143,11 @@ const strokeDashoffset = computed(() => {
       </div>
 
       <!-- Insight 2: Fees -->
-      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[110px]">
+      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-violet-500/20 transition-all duration-300 flex flex-col justify-between min-h-[110px]">
         <div>
           <div class="flex items-center justify-between mb-2">
             <span class="text-[9px] font-bold text-slate-500 uppercase font-sans">Fee Efficiency</span>
-            <span :class="walletStore.totalUtxoCount > 8 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase font-sans">
+            <span :class="walletStore.totalUtxoCount > 8 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border uppercase font-sans">
               {{ walletStore.totalUtxoCount > 8 ? 'Suboptimal' : 'Optimal' }}
             </span>
           </div>
@@ -158,11 +161,11 @@ const strokeDashoffset = computed(() => {
       </div>
 
       <!-- Insight 3: Spam & Clutter -->
-      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[110px]">
+      <div class="p-4 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-violet-500/20 transition-all duration-300 flex flex-col justify-between min-h-[110px]">
         <div>
           <div class="flex items-center justify-between mb-2">
             <span class="text-[9px] font-bold text-slate-500 uppercase font-sans">Spam & Clutter</span>
-            <span :class="cleanerStore.suspiciousAssets.length > 0 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase font-sans">
+            <span :class="cleanerStore.suspiciousAssets.length > 0 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'" class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border uppercase font-sans">
               {{ cleanerStore.suspiciousAssets.length > 0 ? 'Spam Alert' : 'Clean' }}
             </span>
           </div>

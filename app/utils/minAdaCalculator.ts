@@ -44,5 +44,8 @@ export function calculateMinAda(assets: Array<{ policyId: string; assetNameHex: 
  */
 export function formatMinAdaAda(assets: Array<{ policyId: string; assetNameHex: string }>): string {
   const lovelace = calculateMinAda(assets)
-  return (lovelace / 1000000).toFixed(2)
+  return (lovelace / 1000000).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
 }

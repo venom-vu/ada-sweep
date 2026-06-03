@@ -163,22 +163,30 @@ const handleExecuteCleanup = async () => {
     <!-- Selected Action Controls -->
     <div v-else class="flex flex-col gap-5">
       <!-- Summary box -->
-      <div class="bg-white/[0.02] border border-white/[0.08] rounded-xl p-4 text-center">
-        <p class="text-[11px] uppercase text-slate-500 font-semibold tracking-wider">Target Assets Selected</p>
-        <p class="text-2xl font-black font-display text-cyan-400 mt-1.5 mb-1">{{ props.selectedJunk.length }} Tokens / NFTs</p>
-        <p class="text-xs text-slate-400">Current ADA locked in UTXOs: <strong class="text-white">{{ currentLockedAda.toFixed(2) }} ADA</strong></p>
+      <div class="flex flex-wrap justify-between items-center gap-3 bg-white/[0.02] border border-white/[0.08] rounded-xl px-5 py-3.5">
+        <div class="text-left">
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Target Assets</span>
+          <span class="block text-xl font-black font-heading text-amber-400 mt-0.5">{{ props.selectedJunk.length }} Assets</span>
+        </div>
+        <div class="text-left sm:text-right">
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Locked Balance</span>
+          <span class="block text-xl font-black font-heading text-white mt-0.5">
+            {{ currentLockedAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
+        </div>
       </div>
 
       <!-- Mode Selection Toggle -->
       <div class="flex flex-col gap-2.5">
         <label
           class="flex p-3.5 rounded-xl border cursor-pointer transition-all duration-200"
-          :class="cleaningMode === 'isolate' ? 'bg-cyan-500/[0.03] border-cyan-500/30' : 'bg-white/[0.01] border-white/[0.08] hover:bg-white/[0.03]'"
+          :class="cleaningMode === 'isolate' ? 'bg-amber-500/[0.03] border-amber-500/30' : 'bg-white/[0.01] border-white/[0.08] hover:bg-white/[0.03]'"
         >
           <input type="radio" name="cleaningMode" value="isolate" v-model="cleaningMode" class="hidden" />
           <div class="flex flex-col gap-1">
-            <span class="font-bold text-white text-sm">Isolated Junk Box (Default)</span>
-            <span class="text-slate-400 text-xs leading-snug">Merge all junk assets into 1 output to salvage 90%+ locked ADA.</span>
+            <span class="font-bold text-white text-sm font-sans">Isolated Junk Box (Default)</span>
+            <span class="text-slate-400 text-xs leading-snug font-sans">Merge all junk assets into 1 output to salvage 90%+ locked ADA.</span>
           </div>
         </label>
 
@@ -200,11 +208,17 @@ const handleExecuteCleanup = async () => {
       <div class="flex flex-col gap-2 font-display">
         <div class="flex justify-between text-sm text-slate-400">
           <span>New UTXO Locked ADA</span>
-          <span>{{ cleaningMode === "burn" ? "0.00 ADA" : `${newJunkBoxMinAda.toFixed(2)} ADA` }}</span>
+          <span>
+            {{ cleaningMode === "burn" ? "0" : newJunkBoxMinAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
         </div>
         <div class="flex justify-between text-base font-bold border-t border-dashed border-white/[0.08] pt-2 mt-1">
           <span class="text-white">Recoverable ADA Balance</span>
-          <span class="text-emerald-400">+{{ estimatedReclaim.toFixed(2) }} ADA</span>
+          <span class="text-emerald-400">
+            +{{ estimatedReclaim.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
+            <span class="text-emerald-500/80 text-[10px] font-medium ml-0.5">ADA</span>
+          </span>
         </div>
       </div>
 
@@ -225,10 +239,10 @@ const handleExecuteCleanup = async () => {
 
       <!-- Action Submit CTA -->
       <button
-        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         :class="cleaningMode === 'burn'
-          ? 'bg-rose-600 text-white hover:bg-rose-500'
-          : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:opacity-90'"
+          ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-lg shadow-rose-600/20 active:scale-95'
+          : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white hover:opacity-90 shadow-lg shadow-violet-600/20 active:scale-95'"
         :disabled="isExecuting"
         @click="handleExecuteCleanup"
       >
@@ -267,7 +281,7 @@ const handleExecuteCleanup = async () => {
             <a
               :href="'https://preprod.cardanoscan.io/transaction/' + transactionHash"
               target="_blank"
-              class="font-semibold underline text-cyan-400 hover:text-cyan-300"
+              class="font-semibold underline text-violet-400 hover:text-violet-300"
             >
               View Tx: {{ transactionHash.slice(0, 16) }}...
             </a>

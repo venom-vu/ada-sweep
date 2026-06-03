@@ -25,10 +25,10 @@ const shortenAddress = (addr: string) => {
 const formatAda = (adaStr: string) => {
   const parsed = parseFloat(adaStr);
   return isNaN(parsed)
-    ? "0.00"
+    ? "0"
     : parsed.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 6,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
       });
 };
 
@@ -87,48 +87,63 @@ onUnmounted(() => {
     <div v-if="walletStore.isConnected" class="relative">
       <button
         @click.stop="toggleDropdown"
-        class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 hover:border-cyan-500/30 hover:bg-slate-900/80 transition-all duration-200 shadow-premium active:scale-95 group cursor-pointer"
+        class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-900/60 backdrop-blur-md border border-white/10 hover:border-violet-500/30 hover:bg-slate-900/80 transition-all duration-200 shadow-premium active:scale-95 group cursor-pointer"
       >
         <!-- Pulse Dot & Icon -->
         <div class="relative flex items-center justify-center">
           <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
             <span
               class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              :class="walletStore.networkId === 1 ? 'bg-emerald-400' : 'bg-amber-400'"
+              :class="
+                walletStore.networkId === 1 ? 'bg-emerald-400' : 'bg-amber-400'
+              "
             ></span>
             <span
               class="relative inline-flex rounded-full h-2.5 w-2.5"
-              :class="walletStore.networkId === 1 ? 'bg-emerald-500' : 'bg-amber-500'"
+              :class="
+                walletStore.networkId === 1 ? 'bg-emerald-500' : 'bg-amber-500'
+              "
             ></span>
           </span>
 
           <img
             v-if="activeWallet?.icon"
             :src="activeWallet.icon"
-            class="w-6 h-6 rounded bg-slate-950 p-0.5 object-contain"
+            class="w-6 h-6 rounded object-contain"
             alt=""
           />
           <div
             v-else
-            class="w-6 h-6 rounded bg-slate-950 border border-white/10 flex items-center justify-center font-bold text-cyan-400 text-[10px]"
+            class="w-6 h-6 rounded bg-slate-950 border border-white/10 flex items-center justify-center font-bold text-violet-400 text-[10px]"
           >
-            {{ walletStore.walletName ? walletStore.walletName.charAt(0).toUpperCase() : 'W' }}
+            {{
+              walletStore.walletName
+                ? walletStore.walletName.charAt(0).toUpperCase()
+                : "W"
+            }}
           </div>
         </div>
 
         <!-- Address Info (hidden on mobile, responsive layout) -->
         <div class="hidden sm:flex flex-col text-left leading-none pr-1">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <span
+            class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+          >
             {{ activeWallet?.displayName || walletStore.walletName }}
           </span>
-          <span class="text-xs font-mono text-slate-300 mt-0.5">
+          <span class="text-xs font-mono text-slate-300 mt-0.5 font-sans">
             {{ shortenAddress(walletStore.walletAddress) }}
           </span>
         </div>
 
         <!-- Balance Badge -->
-        <div class="hidden min-[400px]:inline-block px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-bold text-xs font-mono">
-          {{ formatAda(walletStore.balanceAda) }} ADA
+        <div
+          class="hidden min-[400px]:inline-block px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-[10px] font-sans"
+        >
+          {{ formatAda(walletStore.balanceAda) }}
+          <span class="text-amber-500/70 text-[10px] font-semibold ml-0.5"
+            >ADA</span
+          >
         </div>
 
         <!-- Chevron Icon -->
@@ -140,7 +155,11 @@ onUnmounted(() => {
           stroke="currentColor"
           stroke-width="2.5"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -148,21 +167,25 @@ onUnmounted(() => {
       <transition name="popover-fade">
         <div
           v-if="isOpen"
-          class="absolute right-0 mt-2.5 w-80 rounded-xl border border-white/10 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl z-[100] flex flex-col gap-4 dropdown-slide"
+          class="fixed sm:absolute top-[76px] sm:top-full left-4 right-4 sm:left-auto sm:right-0 w-auto sm:w-80 mt-2.5 rounded-xl border border-white/10 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl z-[100] flex flex-col gap-4 dropdown-slide"
         >
           <!-- Wallet Info Header -->
           <div class="flex items-center gap-3">
             <img
               v-if="activeWallet?.icon"
               :src="activeWallet.icon"
-              class="w-10 h-10 rounded bg-slate-900 p-1 object-contain border border-white/5"
+              class="w-10 h-10 rounded object-contain border border-white/5"
               alt=""
             />
             <div
               v-else
-              class="w-10 h-10 rounded bg-slate-900 border border-white/10 flex items-center justify-center font-bold text-cyan-400 text-sm"
+              class="w-10 h-10 rounded bg-slate-900 border border-white/10 flex items-center justify-center font-bold text-violet-400 text-sm"
             >
-              {{ walletStore.walletName ? walletStore.walletName.charAt(0).toUpperCase() : 'W' }}
+              {{
+                walletStore.walletName
+                  ? walletStore.walletName.charAt(0).toUpperCase()
+                  : "W"
+              }}
             </div>
             <div class="flex flex-col">
               <h4 class="text-sm font-bold text-white leading-tight">
@@ -173,7 +196,7 @@ onUnmounted(() => {
               </span>
             </div>
             <span
-              class="ml-auto inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+              class="ml-auto inline-flex px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
             >
               Connected
             </span>
@@ -182,25 +205,37 @@ onUnmounted(() => {
           <div class="h-px bg-white/5"></div>
 
           <!-- Network Panel -->
-          <div class="flex justify-between items-center bg-white/[0.01] border border-white/5 rounded-xl p-3">
-            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Network</span>
+          <div
+            class="flex justify-between items-center bg-white/[0.01] border border-white/5 rounded-xl p-3"
+          >
             <span
-              class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              class="text-xs text-slate-400 font-semibold uppercase tracking-wider"
+              >Network</span
+            >
+            <span
+              class="inline-flex px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans uppercase tracking-wider"
               :class="
                 walletStore.networkId === 1
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
               "
             >
-              {{ walletStore.networkId === 1 ? 'Mainnet' : 'Preprod' }}
+              {{ walletStore.networkId === 1 ? "Mainnet" : "Preprod" }}
             </span>
           </div>
 
           <!-- Address Panel with Copy Utility -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] uppercase font-bold tracking-widest text-slate-500">Wallet Address</label>
-            <div class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-              <span class="text-[11px] font-mono text-slate-300 break-all select-all flex-1">
+            <label
+              class="text-[10px] uppercase font-bold tracking-widest text-slate-500"
+              >Wallet Address</label
+            >
+            <div
+              class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5"
+            >
+              <span
+                class="text-[11px] font-mono text-slate-300 break-all select-all flex-1"
+              >
                 {{ shortenAddress(walletStore.walletAddress) }}
               </span>
               <button
@@ -231,25 +266,43 @@ onUnmounted(() => {
                   stroke="currentColor"
                   stroke-width="2.5"
                 >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </button>
             </div>
-            <span v-if="isCopied" class="text-[9px] text-emerald-400 font-bold ml-1 self-start animate-fade-in">
+            <span
+              v-if="isCopied"
+              class="text-[9px] text-emerald-400 font-bold ml-1 self-start animate-fade-in"
+            >
               Address copied successfully!
             </span>
           </div>
 
           <!-- Balance Details -->
-          <div class="flex flex-col gap-2 bg-white/[0.01] border border-white/5 rounded-xl p-4">
+          <div
+            class="flex flex-col gap-2 bg-white/[0.01] border border-white/5 rounded-xl p-4"
+          >
             <div class="flex justify-between items-center">
               <span class="text-xs text-slate-400">Total Balance</span>
-              <span class="text-sm font-bold text-white font-mono">{{ formatAda(walletStore.balanceAda) }} ADA</span>
+              <span class="text-sm font-bold text-white font-mono">
+                {{ formatAda(walletStore.balanceAda) }}
+                <span class="text-slate-500 text-[10px] font-medium ml-0.5"
+                  >ADA</span
+                >
+              </span>
             </div>
             <div class="h-px bg-white/5"></div>
-            <div class="flex justify-between items-center text-[10px] text-slate-500">
+            <div
+              class="flex justify-between items-center text-[10px] text-slate-500"
+            >
               <span>Lovelace</span>
-              <span class="font-mono">{{ walletStore.balanceLovelace.toLocaleString() }}</span>
+              <span class="font-mono">{{
+                walletStore.balanceLovelace.toLocaleString()
+              }}</span>
             </div>
           </div>
 
@@ -281,7 +334,7 @@ onUnmounted(() => {
     <div v-else>
       <button
         @click="handleConnectClick"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-bold shadow-lg shadow-cyan-500/10 hover:shadow-cyan-400/20 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white text-sm font-bold shadow-lg shadow-violet-600/10 hover:shadow-violet-600/20 transition-all duration-200 active:scale-95 cursor-pointer"
       >
         <svg
           class="w-4 h-4"
@@ -321,7 +374,9 @@ onUnmounted(() => {
 
 .popover-fade-enter-active,
 .popover-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .popover-fade-enter-from,

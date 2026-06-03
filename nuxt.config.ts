@@ -15,6 +15,8 @@ export default (defineNuxtConfig as any)({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Optimize your Cardano wallet in one click. Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
+        { name: 'keywords', content: 'Cardano, UTXO consolidator, reclaim ADA, wallet optimizer, spam scanner, eUTXO optimization, Web3 tools' },
+        { name: 'robots', content: 'index, follow, max-image-preview:large' },
         // Open Graph
         { property: 'og:site_name', content: 'ADASweep' },
         { property: 'og:type', content: 'website' },
@@ -30,6 +32,7 @@ export default (defineNuxtConfig as any)({
         { name: 'twitter:image', content: `${siteUrl}/og-image.png` }
       ],
       link: [
+        { rel: 'canonical', href: siteUrl },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon/favicon.ico' },
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon/favicon-96x96.png' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon/favicon.svg' },
