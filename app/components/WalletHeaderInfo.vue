@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useWalletStore } from "~/stores/wallet";
 import { useCardanoWallet } from "~/composables/useCardanoWallet";
-import { useRoute, navigateTo } from "#app";
 
 const walletStore = useWalletStore();
 const { installedWallets } = useCardanoWallet();

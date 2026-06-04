@@ -1,21 +1,25 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { useWalletStore } from "~/stores/wallet";
 import { useOptimizerStore } from "~/stores/optimizer";
+import { ref, computed } from "vue";
 
 const walletStore = useWalletStore();
 const optimizerStore = useOptimizerStore();
+
+const isConsolidating = computed(() => optimizerStore.batchStatus !== "idle")
 
 // Filter value for maximum ADA limit
 const maxAdaFilter = ref<string>("");
 
 // Computed list of UTXOs matching the custom ADA threshold
 const filteredUtxos = computed(() => {
+  let utxos = walletStore.utxos;
+
   const limit = parseFloat(maxAdaFilter.value);
   if (isNaN(limit) || limit < 0 || maxAdaFilter.value === "") {
-    return walletStore.utxos;
+    return utxos;
   }
-  return walletStore.utxos.filter((utxo) => utxo.lovelace / 1000000 <= limit);
+  return utxos.filter((utxo) => utxo.lovelace / 1000000 <= limit);
 });
 
 // Check if all currently filtered UTXOs are selected
@@ -47,6 +51,7 @@ const deselectFiltered = () => {
 };
 
 const toggleSelectAll = () => {
+  if (isConsolidating.value) return;
   if (isAllSelected.value) {
     deselectFiltered();
   } else {
@@ -82,7 +87,7 @@ const formatAda = (lovelace: number) => {
         </p>
       </div>
       <div class="flex items-center gap-3 min-h-[38px]">
-        <div
+        <!-- <div
           v-if="optimizerStore.selectedKeys.length > 0"
           class="flex items-center gap-2.5 animate-fade-in"
         >
@@ -96,7 +101,19 @@ const formatAda = (lovelace: number) => {
               optimizerStore.totalSelectedAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
             }}<span class="text-violet-400/70 text-[10px] font-medium ml-0.5">ADA</span>)
           </span>
-        </div>
+        </div> -->
+        <button
+          @click="walletStore.fetchUtxos()"
+          class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white/5 border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+          title="Refresh UTXOs"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Refresh
+        </button>
       </div>
     </div>
 
@@ -158,12 +175,13 @@ const formatAda = (lovelace: number) => {
         class="w-full sm:w-auto flex items-center"
       >
         <button
-          class="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5"
+          class="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           :class="
             isAllSelected
               ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 shadow-sm shadow-amber-500/5'
               : 'bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 shadow-sm shadow-violet-500/5'
           "
+          :disabled="isConsolidating"
           @click="toggleSelectAll"
         >
           <span v-if="isAllSelected">Deselect Filtered</span>
@@ -210,6 +228,7 @@ const formatAda = (lovelace: number) => {
                 <input
                   type="checkbox"
                   :checked="isAllSelected"
+                  :disabled="isConsolidating"
                   @change="toggleSelectAll"
                   class="checkbox-custom"
                 />
@@ -223,13 +242,15 @@ const formatAda = (lovelace: number) => {
             <tr
               v-for="utxo in filteredUtxos"
               :key="`${utxo.txHash}#${utxo.index}`"
-              class="cursor-pointer transition-colors hover:bg-white/[0.02]"
+              class="transition-colors hover:bg-white/[0.02]"
               :class="{
                 'bg-violet-500/[0.025]': optimizerStore.selectedKeys.includes(
                   `${utxo.txHash}#${utxo.index}`,
                 ),
+                'cursor-pointer': !isConsolidating,
+                'opacity-60': isConsolidating,
               }"
-              @click="optimizerStore.toggleSelection(utxo)"
+              @click="!isConsolidating && optimizerStore.toggleSelection(utxo)"
             >
               <td class="p-4" @click.stop>
                 <input
@@ -239,6 +260,7 @@ const formatAda = (lovelace: number) => {
                       `${utxo.txHash}#${utxo.index}`,
                     )
                   "
+                  :disabled="isConsolidating"
                   @change="optimizerStore.toggleSelection(utxo)"
                   class="checkbox-custom"
                 />
@@ -284,44 +306,47 @@ const formatAda = (lovelace: number) => {
 
       <!-- Mobile view (Stacked List View with Lazy Load) -->
       <div class="block md:hidden overflow-y-auto max-h-[320px] pr-1 space-y-3">
-        <div
-          v-for="utxo in filteredUtxos"
-          :key="`${utxo.txHash}#${utxo.index}`"
-          class="mobile-utxo-item p-4 border border-white/5 bg-white/[0.01] rounded-xl flex flex-col gap-2 transition-colors cursor-pointer"
-          :class="{
-            'bg-violet-500/[0.025] !border-violet-500/20':
-              optimizerStore.selectedKeys.includes(
-                `${utxo.txHash}#${utxo.index}`,
-              ),
-          }"
-          @click="optimizerStore.toggleSelection(utxo)"
-        >
-          <!-- Row 1: TxHash & Checkbox -->
-          <div class="flex items-center justify-between">
-            <div
-              class="flex items-center gap-2 font-mono text-[11px] text-slate-400"
-            >
-              <span class="hover:text-violet-300 transition-colors">
-                {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-6) }}
-              </span>
-              <strong
-                class="text-blue-400 bg-white/5 px-1.5 py-0.5 rounded-lg text-[10px] font-sans font-semibold"
-                >#{{ utxo.index }}</strong
+          <div
+            v-for="utxo in filteredUtxos"
+            :key="`${utxo.txHash}#${utxo.index}`"
+            class="mobile-utxo-item p-4 border border-white/5 bg-white/[0.01] rounded-xl flex flex-col gap-2 transition-colors"
+            :class="{
+              'bg-violet-500/[0.025] !border-violet-500/20':
+                optimizerStore.selectedKeys.includes(
+                  `${utxo.txHash}#${utxo.index}`,
+                ),
+              'cursor-pointer': !isConsolidating,
+              'opacity-60': isConsolidating,
+            }"
+            @click="!isConsolidating && optimizerStore.toggleSelection(utxo)"
+          >
+            <!-- Row 1: TxHash & Checkbox -->
+            <div class="flex items-center justify-between">
+              <div
+                class="flex items-center gap-2 font-mono text-[11px] text-slate-400"
               >
+                <span class="hover:text-violet-300 transition-colors">
+                  {{ utxo.txHash.slice(0, 8) }}...{{ utxo.txHash.slice(-6) }}
+                </span>
+                <strong
+                  class="text-blue-400 bg-white/5 px-1.5 py-0.5 rounded-lg text-[10px] font-sans font-semibold"
+                  >#{{ utxo.index }}</strong
+                >
+              </div>
+              <div @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="
+                    optimizerStore.selectedKeys.includes(
+                      `${utxo.txHash}#${utxo.index}`,
+                    )
+                  "
+                  :disabled="isConsolidating"
+                  @change="optimizerStore.toggleSelection(utxo)"
+                  class="checkbox-custom"
+                />
+              </div>
             </div>
-            <div @click.stop>
-              <input
-                type="checkbox"
-                :checked="
-                  optimizerStore.selectedKeys.includes(
-                    `${utxo.txHash}#${utxo.index}`,
-                  )
-                "
-                @change="optimizerStore.toggleSelection(utxo)"
-                class="checkbox-custom"
-              />
-            </div>
-          </div>
 
           <!-- Row 2: Value & Assets -->
           <div class="flex items-center justify-between text-xs">

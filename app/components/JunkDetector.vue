@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useCleanerStore } from '~/stores/cleaner'
 
 const emit = defineEmits(['update:selectedJunk'])
@@ -44,14 +43,14 @@ const handleMarkAsSuspicious = (assetId: string) => {
 <template>
   <div class="fintech-card p-7">
     <!-- Header & Tabs -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex flex-col md:flex-row items-start md:justify-between gap-4 mb-6">
       <div>
         <h3 class="text-lg font-bold text-white">Cardano Asset Classifier</h3>
         <p class="text-xs text-slate-400 mt-1">
           Scan native assets, audit liquidities, and sweep spam to release locked ADA.
         </p>
       </div>
-      <div class="flex bg-white/[0.03] border border-white/[0.08] rounded-xl p-1 gap-1 relative z-10">
+      <div class="flex bg-white/[0.03] border border-white/[0.08] rounded-xl p-1 gap-1 relative z-10 shrink-0">
         <button
           class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
           :class="activeTab === 'suspicious' ? 'bg-violet-600/90 text-white shadow-lg shadow-violet-600/20' : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'"
@@ -79,21 +78,17 @@ const handleMarkAsSuspicious = (assetId: string) => {
 
     <!-- TAB 1: SUSPICIOUS SPAM LIST -->
     <div v-if="activeTab === 'suspicious'">
-      <div v-if="cleanerStore.suspiciousAssets.length === 0" class="text-center py-12 px-6">
-        <div class="text-4xl mb-4 text-emerald-400">✓</div>
-        <h3 class="text-white font-semibold mb-2">No Suspicious Assets Found</h3>
-        <p class="text-slate-400 text-sm">Your wallet is currently 100% clean of known spam tokens and inactive native assets.</p>
+      <div v-if="cleanerStore.suspiciousAssets.length === 0" class="text-center py-10">
+        <p class="text-slate-400 text-sm">No suspicious assets found.</p>
       </div>
       <div v-else>
         <div
           v-if="cleanerStore.suspiciousAssets.length > 0"
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 mb-6"
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/[0.02] border border-white/[0.06] rounded-2xl px-4 py-3 mb-6"
         >
-          <div>
-            <p class="text-slate-400 text-xs font-sans">
-              Select suspicious assets to consolidate or sweep.
-            </p>
-          </div>
+          <p class="text-slate-400 text-xs font-sans">
+            Select suspicious assets to consolidate or sweep.
+          </p>
           <div class="w-full sm:w-auto flex items-center">
             <button
               class="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5"
@@ -113,11 +108,11 @@ const handleMarkAsSuspicious = (assetId: string) => {
           <table class="w-full text-left">
             <thead class="sticky top-0 z-10 bg-fintech-dark">
               <tr class="border-b border-white/[0.12] text-slate-500 text-xs font-medium uppercase tracking-wider">
-                <th class="py-4 pr-4 w-10">Sel</th>
+                <th class="p-4 w-10"></th>
                 <th class="py-4 px-4">Asset</th>
                 <th class="py-4 px-4">Risk Reason</th>
                 <th class="py-4 px-4">Balance</th>
-                <th class="py-4 pl-4 w-36">Actions</th>
+                <th class="py-4 pl-4">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/[0.04] text-sm">
@@ -128,7 +123,7 @@ const handleMarkAsSuspicious = (assetId: string) => {
                 :class="{ 'bg-violet-500/[0.025]': selectedJunk.includes(asset.assetId) }"
                 @click="toggleSelectJunk(asset.assetId)"
               >
-                <td class="py-4 pr-4" @click.stop>
+                <td class="p-4" @click.stop>
                   <input
                     type="checkbox"
                     :checked="selectedJunk.includes(asset.assetId)"
@@ -139,27 +134,28 @@ const handleMarkAsSuspicious = (assetId: string) => {
                 <td class="py-4 px-4">
                   <div class="flex items-center gap-3">
                     <div class="relative w-9 h-9 bg-rose-500/[0.06] border border-dashed border-rose-500/30 rounded-lg flex items-center justify-center flex-shrink-0 group cursor-help">
-                      <span class="text-base">⚠️</span>
-                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-slate-950/95 backdrop-blur-xl text-white text-[11px] leading-snug p-2.5 rounded-lg border border-white/[0.08] shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-sans">
-                        PHISHING SHIELD ACTIVE: Media components have been safely decoupled to prevent browser attacks.
-                      </div>
+                      <svg class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
                     </div>
                     <div>
                       <p class="font-semibold text-white text-sm">{{ asset.displayName }}</p>
-                      <p class="text-slate-500 text-[11px] font-mono mt-0.5 hover:text-slate-300 transition-colors cursor-help" :title="asset.policyId">{{ asset.policyId.slice(0, 16) }}...</p>
+                      <p class="text-slate-500 text-[11px] font-mono mt-0.5" :title="asset.policyId">{{ asset.policyId.slice(0, 8) }}...{{ asset.policyId.slice(-4) }}</p>
                     </div>
                   </div>
                 </td>
                 <td class="py-4 px-4">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                    <span class="w-1 h-1 rounded-full bg-rose-400"></span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-rose-500/10 text-rose-400 border border-rose-500/20 max-w-[130px] truncate" :title="asset.reason">
+                    <span class="w-1 h-1 rounded-full bg-rose-400 flex-shrink-0"></span>
                     {{ asset.reason }}
                   </span>
                 </td>
-                <td class="py-4 px-4 font-semibold font-display text-white">{{ asset.amount }}</td>
+                <td class="py-4 px-4 font-semibold font-display text-white whitespace-nowrap">{{ asset.amount.toLocaleString() }}</td>
                 <td class="py-4 pl-4" @click.stop>
                   <button
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors whitespace-nowrap"
                     @click="handleMarkAsTrusted(asset.assetId)"
                   >
                     Mark Trusted
@@ -179,7 +175,7 @@ const handleMarkAsSuspicious = (assetId: string) => {
             :class="{ 'bg-rose-500/[0.015] border-rose-500/10': selectedJunk.includes(asset.assetId) }"
             @click="toggleSelectJunk(asset.assetId)"
           >
-            <!-- Row 1: Checkbox & Warning shield badge -->
+            <!-- Row 1: Checkbox & icon badge -->
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div @click.stop>
@@ -191,18 +187,21 @@ const handleMarkAsSuspicious = (assetId: string) => {
                   />
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm">⚠️</span>
-                  <span class="text-[10px] uppercase tracking-wider font-semibold font-sans text-rose-400/80 bg-rose-950/20 px-2.5 py-1 rounded-lg border border-rose-500/20">Phishing Shield</span>
+                  <svg class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
                 </div>
               </div>
-              <span class="text-slate-400 text-xs font-semibold">Balance: <strong class="text-white font-mono">{{ asset.amount }}</strong></span>
+              <span class="text-slate-400 text-xs font-semibold whitespace-nowrap">Bal: <strong class="text-white font-mono">{{ asset.amount.toLocaleString() }}</strong></span>
             </div>
 
             <!-- Row 2: Asset Details -->
             <div class="flex flex-col text-left">
               <p class="font-bold text-white text-sm leading-snug">{{ asset.displayName }}</p>
-              <p class="text-slate-500 text-[10px] font-mono mt-1 select-all break-all" :title="asset.policyId">
-                Policy: {{ asset.policyId.slice(0, 12) }}...{{ asset.policyId.slice(-8) }}
+              <p class="text-slate-500 text-[10px] font-mono mt-1" :title="asset.policyId">
+                {{ asset.policyId.slice(0, 8) }}...{{ asset.policyId.slice(-4) }}
               </p>
             </div>
 
@@ -210,13 +209,13 @@ const handleMarkAsSuspicious = (assetId: string) => {
             <div class="h-px bg-white/5"></div>
 
             <!-- Row 3: Risk reason & Action buttons -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 text-xs">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-rose-500/10 text-rose-400 border border-rose-500/20 text-left">
+            <div class="flex flex-row items-center justify-between gap-3 text-xs">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-rose-500/10 text-rose-400 border border-rose-500/20 max-w-[160px] truncate" :title="asset.reason">
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>
-                <span>{{ asset.reason }}</span>
+                <span class="truncate">{{ asset.reason }}</span>
               </span>
               <button
-                class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                class="flex-shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors whitespace-nowrap"
                 @click.stop="handleMarkAsTrusted(asset.assetId)"
               >
                 Mark Trusted
@@ -230,9 +229,8 @@ const handleMarkAsSuspicious = (assetId: string) => {
 
     <!-- TAB 2: TRUSTED NATIVE ASSETS -->
     <div v-if="activeTab === 'trusted'">
-      <div v-if="cleanerStore.trustedAssets.length === 0" class="text-center py-12 px-6">
-        <h3 class="text-white font-semibold mb-2">No Trusted Assets Found</h3>
-        <p class="text-slate-400 text-sm">This wallet contains no verified whitelisted or active native Cardano assets.</p>
+      <div v-if="cleanerStore.trustedAssets.length === 0" class="text-center py-10">
+        <p class="text-slate-400 text-sm">No trusted assets found.</p>
       </div>
       <div v-else>
         
@@ -242,32 +240,32 @@ const handleMarkAsSuspicious = (assetId: string) => {
             <thead class="sticky top-0 z-10 bg-fintech-dark">
               <tr class="border-b border-white/[0.12] text-slate-500 text-xs font-medium uppercase tracking-wider">
                 <th class="py-4 px-4">Verified Asset</th>
-                <th class="py-4 px-4">Liquidity Origin</th>
+                <th class="py-4 px-4">Origin</th>
                 <th class="py-4 px-4">Balance</th>
-                <th class="py-4 pl-4 w-36">Actions</th>
+                <th class="py-4 pl-4">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/[0.04] text-sm">
               <tr v-for="asset in cleanerStore.trustedAssets" :key="asset.assetId" class="hover:bg-white/[0.02] transition-colors duration-150">
                 <td class="py-4 px-4">
                   <div class="flex items-center gap-3">
-                    <span class="text-emerald-400 font-bold">✓</span>
+                    <span class="text-emerald-400 font-bold flex-shrink-0">✓</span>
                     <div>
                       <p class="font-semibold text-white text-sm">{{ asset.displayName }}</p>
-                      <p class="text-slate-500 text-[11px] font-mono mt-0.5 hover:text-slate-300 transition-colors cursor-help" :title="asset.policyId">{{ asset.policyId.slice(0, 16) }}...</p>
+                      <p class="text-slate-500 text-[11px] font-mono mt-0.5" :title="asset.policyId">{{ asset.policyId.slice(0, 8) }}...{{ asset.policyId.slice(-4) }}</p>
                     </div>
                   </div>
                 </td>
                 <td class="py-4 px-4">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span class="w-1 h-1 rounded-full bg-emerald-400"></span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 max-w-[130px] truncate" :title="asset.reason">
+                    <span class="w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0"></span>
                     {{ asset.reason }}
                   </span>
                 </td>
-                <td class="py-4 px-4 font-semibold font-display text-white">{{ asset.amount }}</td>
+                <td class="py-4 px-4 font-semibold font-display text-white whitespace-nowrap">{{ asset.amount.toLocaleString() }}</td>
                 <td class="py-4 pl-4">
                   <button
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors whitespace-nowrap"
                     @click="handleMarkAsSuspicious(asset.assetId)"
                   >
                     Flag as Spam
@@ -289,16 +287,16 @@ const handleMarkAsSuspicious = (assetId: string) => {
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold">
                 <span>✓</span>
-                <span class="text-[10px] uppercase tracking-wider font-semibold font-sans bg-emerald-950/20 px-2.5 py-1 rounded-lg border border-emerald-500/20">Verified Asset</span>
+                <span class="text-[10px] uppercase tracking-wider font-semibold font-sans bg-emerald-950/20 px-2.5 py-1 rounded-lg border border-emerald-500/20">Verified</span>
               </div>
-              <span class="text-slate-400 text-xs font-semibold">Balance: <strong class="text-white font-mono">{{ asset.amount }}</strong></span>
+              <span class="text-slate-400 text-xs font-semibold whitespace-nowrap">Bal: <strong class="text-white font-mono">{{ asset.amount.toLocaleString() }}</strong></span>
             </div>
 
             <!-- Row 2: Asset Details -->
             <div class="flex flex-col text-left">
               <p class="font-bold text-white text-sm leading-snug">{{ asset.displayName }}</p>
-              <p class="text-slate-500 text-[10px] font-mono mt-1 select-all break-all" :title="asset.policyId">
-                Policy: {{ asset.policyId.slice(0, 12) }}...{{ asset.policyId.slice(-8) }}
+              <p class="text-slate-500 text-[10px] font-mono mt-1" :title="asset.policyId">
+                {{ asset.policyId.slice(0, 8) }}...{{ asset.policyId.slice(-4) }}
               </p>
             </div>
 
@@ -306,13 +304,13 @@ const handleMarkAsSuspicious = (assetId: string) => {
             <div class="h-px bg-white/5"></div>
 
             <!-- Row 3: Risk reason & Action buttons -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between items-start gap-3 text-xs">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-left">
+            <div class="flex flex-row items-center justify-between gap-3 text-xs">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold font-sans bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 max-w-[160px] truncate" :title="asset.reason">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
-                <span>{{ asset.reason }}</span>
+                <span class="truncate">{{ asset.reason }}</span>
               </span>
               <button
-                class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                class="flex-shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-white/5 border border-white/[0.08] text-white hover:bg-white/10 transition-colors whitespace-nowrap"
                 @click="handleMarkAsSuspicious(asset.assetId)"
               >
                 Flag as Spam

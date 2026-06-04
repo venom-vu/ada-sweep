@@ -1,6 +1,3 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-
 import type { UTXO } from "~/utils/transactionBatcher";
 
 declare global {

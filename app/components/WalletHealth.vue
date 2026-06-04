@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useWalletStore } from "~/stores/wallet";
 import { useCleanerStore } from "~/stores/cleaner";
 

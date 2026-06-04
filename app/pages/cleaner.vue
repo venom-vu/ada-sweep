@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import JunkDetector from "~/components/JunkDetector.vue";
 import JunkBurner from "~/components/JunkBurner.vue";
-import { useSeoMeta } from "#imports";
+import { toast } from "vue-sonner";
+import { useCleanerStore } from "~/stores/cleaner";
+import { useWalletStore } from "~/stores/wallet";
+import { onMounted } from "vue";
 
 definePageMeta({
   auth: true,
   layout: "dashboard",
 });
+
+const cleanerStore = useCleanerStore();
+const walletStore = useWalletStore();
 
 useSeoMeta({
   title: "Clean Cardano Spam & Burn Phishing Tokens — ADASweep",
@@ -28,7 +33,19 @@ const onSelectedJunkUpdate = (ids: string[]) => {
 
 const onBurnSuccess = () => {
   selectedJunkIds.value = [];
+  toast.success("Junk sweep completed on-chain!", { id: "junk-sweep" });
 };
+
+const onBurnError = (msg: string) => {
+  toast.error(msg || "Junk sweep failed", { id: "junk-sweep" });
+};
+
+// Auto-scan assets on mount
+onMounted(() => {
+  if (walletStore.utxos.length > 0) {
+    cleanerStore.fetchDexLiquidity();
+  }
+});
 </script>
 
 <template>
@@ -36,15 +53,16 @@ const onBurnSuccess = () => {
     <ClientOnly>
       <!-- CONNECTED STATE -->
       <div class="flex flex-col gap-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           <JunkDetector
-            class="lg:col-span-2"
+            class="lg:col-span-3"
             @update:selectedJunk="onSelectedJunkUpdate"
           />
           <JunkBurner
-            class="lg:col-span-1"
+            class="lg:col-span-2"
             :selectedJunk="selectedJunkIds"
             @burnSuccess="onBurnSuccess"
+            @burnError="onBurnError"
           />
         </div>
       </div>

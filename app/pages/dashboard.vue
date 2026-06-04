@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useWalletStore } from "~/stores/wallet";
 import WalletHealth from "~/components/WalletHealth.vue";
-import { useSeoMeta } from "#imports";
 
 definePageMeta({
   auth: true,

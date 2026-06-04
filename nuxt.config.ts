@@ -7,6 +7,7 @@ const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://adasweep.xyz'
 export default (defineNuxtConfig as any)({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
+  ssr: false,
 
   app: {
     head: {
@@ -44,12 +45,14 @@ export default (defineNuxtConfig as any)({
 
   runtimeConfig: {
     public: {
-      siteUrl
+      siteUrl,
+      blockfrostApiKeyPreprod: '',
+      blockfrostApiKeyMainnet: ''
     }
   },
 
   // Enable Pinia and Tailwind modules
-  modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss'],
+  modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss', 'vue-sonner/nuxt'],
 
   // Nuxt 4 App directory structure alignment
   future: {

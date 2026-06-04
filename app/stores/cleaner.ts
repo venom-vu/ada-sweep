@@ -1,5 +1,3 @@
-import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
 import { useWalletStore } from './wallet'
 import { useLocalStorage } from '~/composables/useLocalStorage'
 
@@ -81,7 +79,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
           displayName,
           amount: info.amount,
           category: 'trusted',
-          reason: 'User Overridden Whitelist',
+          reason: 'User Whitelisted',
           phishingUrlShielded: false
         }
       }
@@ -95,7 +93,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
           displayName,
           amount: info.amount,
           category: 'suspicious',
-          reason: 'Known Spam/Blacklisted Asset',
+          reason: 'Blacklisted',
           imageUrl: 'https://unsafe-scam-metadata-url.com/phish.jpg',
           originalUrl: 'https://unsafe-scam-metadata-url.com/phish.jpg',
           phishingUrlShielded: true
@@ -111,7 +109,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
           displayName,
           amount: info.amount,
           category: 'trusted',
-          reason: 'Official System Whitelist',
+          reason: 'System Whitelisted',
           phishingUrlShielded: false
         }
       }
@@ -128,7 +126,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
           displayName,
           amount: info.amount,
           category: 'suspicious',
-          reason: 'Identified Spam/Phishing Token Structure ($0.00 USD DEX Pools)',
+          reason: 'Scam Name Pattern',
           imageUrl: 'https://unsafe-scam-metadata-url.com/nft-phishing.jpg',
           originalUrl: 'https://unsafe-scam-metadata-url.com/nft-phishing.jpg',
           phishingUrlShielded: true
@@ -144,7 +142,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
           displayName,
           amount: info.amount,
           category: 'suspicious',
-          reason: 'Inactive Asset ($0.00 DEX liquidity)',
+          reason: 'No DEX Liquidity',
           imageUrl: 'https://suspicious-token-link.com/scam.png',
           originalUrl: 'https://suspicious-token-link.com/scam.png',
           phishingUrlShielded: true
@@ -158,7 +156,7 @@ export const useCleanerStore = defineStore('cleaner', () => {
         displayName,
         amount: info.amount,
         category: 'trusted',
-        reason: 'Active/Standard Native Asset',
+          reason: 'Standard Asset',
         phishingUrlShielded: false
       }
     })

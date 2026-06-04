@@ -1,11 +1,17 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
 import { useWalletStore } from "./wallet";
 import { chunkUtxos, type UTXO } from "~/utils/transactionBatcher";
 import { TxBuilder } from "@hydra-sdk/transaction";
+import { waitForTxConfirm } from "~/utils/blockfrostWatcher";
 
 export const useOptimizerStore = defineStore("optimizer", () => {
   const walletStore = useWalletStore();
+  const config = useRuntimeConfig();
+  const blockfrostApiKeyPreprod = config.public.blockfrostApiKeyPreprod as string;
+  const blockfrostApiKeyMainnet = config.public.blockfrostApiKeyMainnet as string;
+
+  const getBlockfrostKey = (network: "preprod" | "mainnet"): string => {
+    return network === "mainnet" ? blockfrostApiKeyMainnet : blockfrostApiKeyPreprod;
+  };
 
   // Checklist tracking selected UTXO keys formatted as "txHash#index"
   const selectedKeys = ref<string[]>([]);
@@ -14,9 +20,14 @@ export const useOptimizerStore = defineStore("optimizer", () => {
   const isExecuting = ref(false);
   const currentBatchIndex = ref(0);
   const totalBatches = ref(0);
-  const batchStatus = ref<"idle" | "signing" | "success" | "error">("idle");
+  const batchStatus = ref<"idle" | "signing" | "submitted" | "confirming" | "success" | "error">("idle");
   const transactionHashes = ref<string[]>([]);
   const executionError = ref<string | null>(null);
+
+  const latestTxHash = computed(() => {
+    const hashes = transactionHashes.value;
+    return hashes.length > 0 ? hashes[hashes.length - 1] : null;
+  });
 
   // Map selected keys to full UTXO objects
   const selectedUtxos = computed<UTXO[]>(() => {
@@ -202,7 +213,7 @@ export const useOptimizerStore = defineStore("optimizer", () => {
             witnessSet,
             tx.auxiliary_data(),
           );
-          console.log("signedTx", signedTx);
+
           const signedTxHex = walletStore.toHex(signedTx.to_bytes());
 
           txHash = await walletStore.walletApi.submitTx(signedTxHex);
@@ -218,14 +229,18 @@ export const useOptimizerStore = defineStore("optimizer", () => {
         }
 
         transactionHashes.value.push(txHash);
+        batchStatus.value = "submitted";
 
-        // 6. Update local store: remove consolidated inputs from state
-        const keysToRemove = currentBatchInputs.map(
-          (u) => `${u.txHash}#${u.index}`,
-        );
-        walletStore.utxos = walletStore.utxos.filter(
-          (u) => !keysToRemove.includes(`${u.txHash}#${u.index}`),
-        );
+        // 6. Wait for on-chain confirmation (Blockfrost polling)
+        if (walletStore.walletApi) {
+          batchStatus.value = "confirming";
+          const network = walletStore.selectedNetwork;
+          await waitForTxConfirm(txHash, getBlockfrostKey(network), network);
+          await walletStore.fetchUtxos();
+        } else {
+          // Demo mode — simulate confirmation delay
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
       }
 
       batchStatus.value = "success";
@@ -257,6 +272,7 @@ export const useOptimizerStore = defineStore("optimizer", () => {
     batchStatus,
     transactionHashes,
     executionError,
+    latestTxHash,
     selectedUtxos,
     totalSelectedLovelace,
     totalSelectedAda,

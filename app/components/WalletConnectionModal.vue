@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useCardanoWallet } from "~/composables/useCardanoWallet";
 import { useWalletStore } from "~/stores/wallet";
-import { useRoute, navigateTo } from "#app";
 
 const { installedWallets } = useCardanoWallet();
 const walletStore = useWalletStore();
@@ -59,7 +58,7 @@ const handleConnect = async (walletName: string) => {
               <img
                 v-if="wallet.icon"
                 :src="wallet.icon"
-                class="w-6 h-6 rounded object-contain bg-slate-950 p-0.5"
+                class="w-6 h-6 rounded object-contain"
                 alt=""
               />
               <span

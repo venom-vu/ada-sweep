@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useOptimizerStore } from '~/stores/optimizer'
+import { useWalletStore } from '~/stores/wallet'
 
 const optimizerStore = useOptimizerStore()
+const walletStore = useWalletStore()
+
+let resetTimer: ReturnType<typeof setTimeout> | null = null
 
 const handleConsolidate = async () => {
   await optimizerStore.executeConsolidation()
@@ -10,6 +14,27 @@ const handleConsolidate = async () => {
 const handleReset = () => {
   optimizerStore.resetBatchFlow()
 }
+
+const cardanoscanUrl = computed(() => {
+  const hash = optimizerStore.latestTxHash
+  if (!hash) return '#'
+  const base = walletStore.selectedNetwork === 'preprod'
+    ? 'https://preprod.cardanoscan.io/transaction/'
+    : 'https://cardanoscan.io/transaction/'
+  return base + hash
+})
+
+watch(() => optimizerStore.batchStatus, (status) => {
+  if (status === 'success') {
+    resetTimer = setTimeout(() => {
+      optimizerStore.resetBatchFlow()
+    }, 2500)
+  }
+})
+
+onUnmounted(() => {
+  if (resetTimer) clearTimeout(resetTimer)
+})
 </script>
 
 <template>
@@ -28,11 +53,11 @@ const handleReset = () => {
       <!-- Statistics Summary Box -->
       <div class="flex flex-wrap justify-between items-center gap-3 bg-white/[0.02] border border-white/[0.08] rounded-xl px-5 py-3.5">
         <div class="text-left">
-          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Selected Inputs</span>
-          <span class="block text-xl font-black font-heading text-white mt-0.5">{{ optimizerStore.selectedKeys.length }} UTXOs</span>
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Selected</span>
+          <span class="block text-xl font-black font-heading text-white mt-0.5">{{ optimizerStore.selectedKeys.length }} <span class="text-slate-500 text-[10px] font-medium ml-0.5">UTXOs</span></span>
         </div>
         <div class="text-left sm:text-right">
-          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Aggregated Balance</span>
+          <span class="block text-[11px] uppercase text-slate-500 font-semibold tracking-wider font-sans">Total Balance</span>
           <span class="block text-xl font-black font-heading text-white mt-0.5">
             {{ optimizerStore.totalSelectedAda.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
             <span class="text-slate-500 text-[10px] font-medium ml-0.5">ADA</span>
@@ -74,105 +99,55 @@ const handleReset = () => {
         </div>
       </div>
 
-      <!-- ACTION SUBMIT BUTTON -->
+      <!-- DYNAMIC ACTION AREA -->
+
+      <!-- IDLE: Submit button -->
       <button
-        v-if="optimizerStore.batchStatus === 'idle'"
-        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white hover:opacity-90 shadow-lg shadow-violet-600/20 active:scale-95 text-sm font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-        :disabled="optimizerStore.isExecuting"
+        v-if="['idle','error'].includes(optimizerStore.batchStatus)"
+        class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white hover:opacity-90 shadow-lg shadow-violet-600/20 active:scale-95 text-sm font-semibold transition-all duration-300 cursor-pointer"
         @click="handleConsolidate"
       >
         Optimize selected eUTXOs
       </button>
 
-      <!-- BATCH QUEUE TRACKER -->
-      <div v-if="optimizerStore.batchStatus !== 'idle'" class="rounded-xl border border-white/[0.1] bg-[rgba(20,27,45,0.6)] p-5 flex flex-col gap-4">
-        <div class="flex justify-between items-center">
-          <h4 class="text-sm font-bold font-display text-white">Consolidation Batches</h4>
-          <span
-            class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-            :class="{
-              'bg-amber-500/10 text-amber-400 border border-amber-500/20': optimizerStore.batchStatus === 'signing',
-              'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': optimizerStore.batchStatus === 'success',
-              'bg-rose-500/10 text-rose-400 border border-rose-500/20': optimizerStore.batchStatus === 'error'
-            }"
-          >
-            {{ optimizerStore.batchStatus === 'signing' ? 'Signing in Progress' : optimizerStore.batchStatus === 'success' ? 'Completed' : 'Error' }}
-          </span>
-        </div>
-
-        <!-- Progress Bar -->
-        <div>
-          <div class="flex justify-between text-xs text-slate-400 mb-1.5 font-sans">
-            <span>Overall Progress</span>
-            <span class="font-heading">Batch {{ optimizerStore.currentBatchIndex + 1 }} / {{ optimizerStore.totalBatches }}</span>
-          </div>
-          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div
-              class="h-full bg-gradient-to-r from-violet-500 to-indigo-500 progress-fill"
-              :style="{ width: ((optimizerStore.currentBatchIndex + (optimizerStore.batchStatus === 'success' ? 1 : 0)) / optimizerStore.totalBatches * 100) + '%' }"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Batch Log Items -->
-        <div class="flex flex-col gap-2">
-          <div
-            v-for="idx in optimizerStore.totalBatches"
-            :key="idx"
-            class="flex justify-between items-center px-3 py-2.5 rounded-lg border text-xs transition-all duration-200"
-            :class="{
-              'bg-violet-500/[0.03] border-violet-500/20 text-white': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
-              'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-400': optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success',
-              'bg-white/[0.01] border-white/[0.08] text-slate-400': !(optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing') && !(optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success')
-            }"
-          >
-            <div class="flex items-center gap-2">
-              <span
-                class="w-1.5 h-1.5 rounded-full"
-                :class="{
-                  'bg-violet-400 shadow-[0_0_6px_#8b5cf6] animate-pulse': optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing',
-                  'bg-emerald-400': optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success',
-                  'bg-slate-600': !(optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing') && !(optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success')
-                }"
-              ></span>
-              <span>Batch #{{ idx }}</span>
-            </div>
-            <span class="font-semibold">
-              {{ optimizerStore.currentBatchIndex > idx - 1 || optimizerStore.batchStatus === 'success' ? 'Signed & Submitted' :
-                 optimizerStore.currentBatchIndex === idx - 1 && optimizerStore.batchStatus === 'signing' ? 'Signing...' :
-                 optimizerStore.batchStatus === 'error' && optimizerStore.currentBatchIndex === idx - 1 ? 'Failed' : 'Pending' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Tx Hashes -->
-        <div v-if="optimizerStore.transactionHashes.length > 0">
-          <p class="text-xs font-semibold text-slate-400 mb-2">Dispatched Tx Hashes:</p>
-          <div class="max-h-28 overflow-y-auto flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-lg border border-white/[0.06]">
-            <div v-for="(hash, index) in optimizerStore.transactionHashes" :key="hash" class="flex justify-between text-xs font-mono">
-              <span class="text-slate-400">Batch {{ index + 1 }}:</span>
-              <a :href="'https://preprod.cardanoscan.io/transaction/' + hash" target="_blank" class="text-violet-400 hover:text-violet-300 underline">
-                {{ hash.slice(0, 16) }}...{{ hash.slice(-4) }}
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reset / Retry -->
+      <!-- SIGNING: Wallet signature request -->
+      <div v-else-if="optimizerStore.batchStatus === 'signing'" class="flex flex-col gap-3">
         <button
-          v-if="optimizerStore.batchStatus === 'success' || optimizerStore.batchStatus === 'error'"
-          class="w-full inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white/5 border border-white/[0.08] text-white text-sm font-semibold hover:bg-white/10 transition-colors"
-          @click="handleReset"
+          disabled
+          class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-violet-600/30 text-violet-300 border border-violet-500/30 text-sm font-semibold cursor-not-allowed"
         >
-          {{ optimizerStore.batchStatus === 'success' ? 'Back to Optimizer' : 'Retry Consolidation' }}
+          <svg class="animate-spin h-4 w-4 text-violet-300" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Signing...
         </button>
       </div>
+
+      <!-- SUBMITTED / CONFIRMING: Show tx hash + waiting on-chain -->
+      <div v-else-if="optimizerStore.batchStatus === 'submitted' || optimizerStore.batchStatus === 'confirming'" class="flex flex-col gap-3">
+        <div v-if="optimizerStore.latestTxHash" class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08]">
+          <span class="text-xs font-semibold text-slate-400">Tx Hash:</span>
+          <a
+            :href="cardanoscanUrl"
+            target="_blank"
+            class="text-xs font-mono text-violet-400 hover:text-violet-300 underline truncate max-w-[220px]"
+          >
+            {{ optimizerStore.latestTxHash.slice(0, 16) }}...{{ optimizerStore.latestTxHash.slice(-4) }}
+          </a>
+        </div>
+        <button
+          disabled
+          class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 text-sm font-semibold cursor-not-allowed"
+        >
+          <svg class="animate-spin h-4 w-4 text-emerald-300" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Confirming on-chain...
+        </button>
+      </div>
+
     </div>
   </div>
 </template>
-
-<style scoped>
-.progress-fill {
-  transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-</style>

@@ -1,5 +1,3 @@
-import { ref, watch } from 'vue'
-
 export function useLocalStorage<T>(key: string, defaultValue: T) {
   const isBrowser = typeof window !== 'undefined'
   const storedValue = ref<T>(defaultValue)

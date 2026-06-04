@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
 import { useWalletStore } from "~/stores/wallet";
-import { useSeoMeta, useHead } from "#imports";
 
 const walletStore = useWalletStore();
 

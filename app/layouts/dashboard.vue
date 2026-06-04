@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import WalletConnection from "~/components/WalletConnection.vue";
 import WalletHeaderInfo from "~/components/WalletHeaderInfo.vue";
 import { useWalletStore } from "~/stores/wallet";
-import { useRoute } from "#app";
 
 const walletStore = useWalletStore();
 const route = useRoute();
@@ -24,6 +22,7 @@ const pageTitle = computed(() => {
 
 <template>
   <div
+    v-if="walletStore.isConnected"
     class="flex relative min-h-screen font-sans bg-fintech-black text-slate-100"
   >
     <!-- DESKTOP LEFT SIDEBAR -->
@@ -271,5 +270,14 @@ const pageTitle = computed(() => {
         </NuxtLink>
       </nav>
     </div>
+  </div>
+  <div
+    v-else
+    class="flex items-center justify-center min-h-screen bg-fintech-black"
+  >
+    <svg class="animate-spin h-8 w-8 text-violet-500" viewBox="0 0 24 24" fill="none">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   </div>
 </template>
