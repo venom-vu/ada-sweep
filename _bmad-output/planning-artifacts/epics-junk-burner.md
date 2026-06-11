@@ -59,24 +59,25 @@ Không có UX document — bỏ qua.
 
 ### FR Coverage Map
 
-| FR | Epic |
-|----|------|
-| FR1 (DexService interface + types) | Epic 1 |
-| FR2 (Fetch liquidity real-time) | Epic 1 |
+| FR                                              | Epic   |
+| ----------------------------------------------- | ------ |
+| FR1 (DexService interface + types)              | Epic 1 |
+| FR2 (Fetch liquidity real-time)                 | Epic 1 |
 | FR3 (Fallback heuristic + ClassificationStatus) | Epic 1 |
-| FR4 (Network switch re-classify) | Epic 1 |
-| FR5 (Minswap Aggregator Mainnet) | Epic 1 |
-| FR6 (Heuristic local Preprod) | Epic 1 |
-| FR7 (UTXO scanning fallback Mainnet) | Epic 1 |
-| FR8 (Phishing URL detection) | Epic 2 |
-| FR9 (Whitelist override persist) | Epic 2 |
-| FR10 (Whitelist per network) | Epic 2 |
-| AR1-AR9 (Architecture standards) | Epic 1 |
-| AR10 (Phishing URL shielding) | Epic 2 |
+| FR4 (Network switch re-classify)                | Epic 1 |
+| FR5 (Minswap Aggregator Mainnet)                | Epic 1 |
+| FR6 (Heuristic local Preprod)                   | Epic 1 |
+| FR7 (UTXO scanning fallback Mainnet)            | Epic 1 |
+| FR8 (Phishing URL detection)                    | Epic 2 |
+| FR9 (Whitelist override persist)                | Epic 2 |
+| FR10 (Whitelist per network)                    | Epic 2 |
+| AR1-AR9 (Architecture standards)                | Epic 1 |
+| AR10 (Phishing URL shielding)                   | Epic 2 |
 
 ## Epic List
 
 ### Epic 1: Asset Classification Engine
+
 User kết nối ví, vào Cleaner page, thấy tất cả asset được phân loại chính xác bằng dữ liệu DEX thật — real-time, cross-network, với fallback heuristic khi API không available.
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, AR1-AR9
 **NFRs covered:** NFR2, NFR3, NFR5, NFR6, NFR7, NFR9, NFR10, NFR11
@@ -326,6 +327,7 @@ So that **I always see accurate results for the network I'm using**.
 **Then** cache Mainnet cũ (nếu còn TTL) được dùng lại, không fetch lại.
 
 ### Epic 2: Phishing Protection & User Whitelist
+
 User được bảo vệ khỏi phishing NFT ẩn trong metadata, có thể tự trust/flag asset và override classification qua localStorage whitelist — phân tách theo từng network.
 **FRs covered:** FR8, FR9, FR10, AR10
 **NFRs covered:** NFR1, NFR4, NFR8
@@ -421,4 +423,3 @@ So that **I can quickly correct misclassifications without leaving the page**.
 **Given** user click "Flag as Spam",
 **When** action hoàn tất,
 **Then** asset di chuyển từ Trusted sang Suspicious tab ngay lập tức.
-

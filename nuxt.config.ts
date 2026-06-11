@@ -24,13 +24,13 @@ export default (defineNuxtConfig as any)({
         { property: 'og:url', content: siteUrl },
         { property: 'og:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
         { property: 'og:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
-        { property: 'og:image', content: `${siteUrl}/og-image.png` },
+        { property: 'og:image', content: `${siteUrl}/og-image.webp` },
         // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:url', content: siteUrl },
         { name: 'twitter:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
         { name: 'twitter:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
-        { name: 'twitter:image', content: `${siteUrl}/og-image.png` }
+        { name: 'twitter:image', content: `${siteUrl}/og-image.webp` }
       ],
       link: [
         { rel: 'canonical', href: siteUrl },

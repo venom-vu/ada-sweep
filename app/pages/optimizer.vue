@@ -12,6 +12,7 @@ definePageMeta({
 
 const optimizer = useOptimizerStore();
 const walletStore = useWalletStore();
+const utxoTableRef = ref<InstanceType<typeof UtxoTable> | null>(null);
 
 // Auto-refresh UTXOs every 60s
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -22,21 +23,37 @@ onMounted(() => {
 });
 onUnmounted(() => {
   if (refreshTimer) clearInterval(refreshTimer);
-  optimizer.resetBatchFlow();
+  if (!optimizer.isExecuting) {
+    optimizer.resetBatchFlow();
+    optimizer.deselectAll();
+  }
+  utxoTableRef.value?.resetFilters();
 });
 
 watch(
   () => optimizer.batchStatus,
   (status) => {
-    if (status === "success")
+    if (status === "success") {
       toast.success("All transactions confirmed on-chain!", {
         id: "tx-confirm",
       });
-    if (status === "error")
+      optimizer.deselectAll();
+      utxoTableRef.value?.resetFilters();
+      walletStore.fetchUtxos();
+      setTimeout(() => {
+        optimizer.resetBatchFlow();
+      }, 2500);
+    }
+    if (status === "error") {
       toast.error(optimizer.executionError || "Transaction failed", {
         id: "tx-confirm",
       });
+      setTimeout(() => {
+        optimizer.resetBatchFlow();
+      }, 2500);
+    }
   },
+  { immediate: true }
 );
 
 useSeoMeta({
@@ -57,7 +74,7 @@ useSeoMeta({
       <!-- CONNECTED OPTIMIZER PAGE -->
       <div class="flex flex-col gap-8">
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-          <UtxoTable class="lg:col-span-3" />
+          <UtxoTable ref="utxoTableRef" class="lg:col-span-3" />
           <OptimizerControls class="lg:col-span-2" />
         </div>
       </div>

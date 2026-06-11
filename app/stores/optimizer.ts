@@ -2,15 +2,20 @@ import { useWalletStore } from "./wallet";
 import { chunkUtxos, type UTXO } from "~/utils/transactionBatcher";
 import { TxBuilder } from "@hydra-sdk/transaction";
 import { waitForTxConfirm } from "~/utils/blockfrostWatcher";
+import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 
 export const useOptimizerStore = defineStore("optimizer", () => {
   const walletStore = useWalletStore();
   const config = useRuntimeConfig();
-  const blockfrostApiKeyPreprod = config.public.blockfrostApiKeyPreprod as string;
-  const blockfrostApiKeyMainnet = config.public.blockfrostApiKeyMainnet as string;
+  const blockfrostApiKeyPreprod = config.public
+    .blockfrostApiKeyPreprod as string;
+  const blockfrostApiKeyMainnet = config.public
+    .blockfrostApiKeyMainnet as string;
 
   const getBlockfrostKey = (network: "preprod" | "mainnet"): string => {
-    return network === "mainnet" ? blockfrostApiKeyMainnet : blockfrostApiKeyPreprod;
+    return network === "mainnet"
+      ? blockfrostApiKeyMainnet
+      : blockfrostApiKeyPreprod;
   };
 
   // Checklist tracking selected UTXO keys formatted as "txHash#index"
@@ -20,7 +25,9 @@ export const useOptimizerStore = defineStore("optimizer", () => {
   const isExecuting = ref(false);
   const currentBatchIndex = ref(0);
   const totalBatches = ref(0);
-  const batchStatus = ref<"idle" | "signing" | "submitted" | "confirming" | "success" | "error">("idle");
+  const batchStatus = ref<
+    "idle" | "signing" | "submitted" | "confirming" | "success" | "error"
+  >("idle");
   const transactionHashes = ref<string[]>([]);
   const executionError = ref<string | null>(null);
 
@@ -97,6 +104,9 @@ export const useOptimizerStore = defineStore("optimizer", () => {
   // Action: Build and run the batch transaction flow
   const executeConsolidation = async () => {
     if (selectedUtxos.value.length === 0) return;
+    if (!walletStore.walletApi) {
+      throw new Error("Wallet not connected");
+    }
 
     isExecuting.value = true;
     currentBatchIndex.value = 0;
@@ -115,132 +125,137 @@ export const useOptimizerStore = defineStore("optimizer", () => {
         if (!currentBatchInputs) continue;
         let txHash = "";
 
-        if (walletStore.walletApi) {
-          // 1. Instantiate TxBuilder
-          const txBuilder = new TxBuilder();
-          const wasm = await walletStore.loadWasm();
+        // 1. Instantiate TxBuilder
+        const txBuilder = new TxBuilder();
 
-          // 2. Add Inputs manually directly to CSL builder to bypass CIP-2 Coin Selection
-          currentBatchInputs.forEach((utxo) => {
-            const txInput = wasm.TransactionInput.new(
-              wasm.TransactionHash.from_hex(utxo.txHash),
-              utxo.index
-            );
+        // 2. Add Inputs manually directly to CSL builder to bypass CIP-2 Coin Selection
+        currentBatchInputs.forEach((utxo) => {
+          const txInput = CardanoWASM.TransactionInput.new(
+            CardanoWASM.TransactionHash.from_hex(utxo.txHash),
+            utxo.index,
+          );
 
-            // Construct CSL Value object (Lovelace + Native Assets)
-            const value = wasm.Value.new(wasm.BigNum.from_str(utxo.lovelace.toString()));
-            if (Object.keys(utxo.assets).length > 0) {
-              const multiAsset = wasm.MultiAsset.new();
-              Object.entries(utxo.assets).forEach(([assetId, qty]) => {
-                const parts = assetId.split(".");
-                const policyId = parts[0];
-                const assetNameHex = parts[1] || "";
-
-                if (policyId) {
-                  const policyHash = wasm.ScriptHash.from_hex(policyId);
-                  const assets = wasm.Assets.new();
-                  assets.insert(
-                    wasm.AssetName.new(walletStore.fromHex(assetNameHex)),
-                    wasm.BigNum.from_str(qty.toString())
-                  );
-                  multiAsset.insert(policyHash, assets);
+          // Construct CSL Value object (Lovelace + Native Assets)
+          const value = CardanoWASM.Value.new(
+            CardanoWASM.BigNum.from_str(utxo.lovelace.toString()),
+          );
+          if (Object.keys(utxo.assets).length > 0) {
+            const multiAsset = CardanoWASM.MultiAsset.new();
+            const groupedByPolicy: Record<string, Record<string, number>> = {};
+            
+            Object.entries(utxo.assets).forEach(([assetId, qty]) => {
+              const parts = assetId.split(".");
+              const policyId = parts[0];
+              const assetNameHex = parts[1] || "";
+              if (policyId) {
+                let policyMap = groupedByPolicy[policyId];
+                if (!policyMap) {
+                  policyMap = {};
+                  groupedByPolicy[policyId] = policyMap;
                 }
-              });
-              value.set_multiasset(multiAsset);
-            }
-
-            const addressObj = wasm.Address.from_bech32(utxo.address);
-            txBuilder.txBuilder.add_regular_input(addressObj, txInput, value);
-          });
-
-          // 3. Add Consolidated Output manually to the CSL builder for any native assets in this batch
-          const consolidatedAssets: Record<string, number> = {};
-          currentBatchInputs.forEach((u) => {
-            Object.entries(u.assets).forEach(([assetId, qty]) => {
-              consolidatedAssets[assetId] =
-                (consolidatedAssets[assetId] || 0) + qty;
+                policyMap[assetNameHex] = qty;
+              }
             });
-          });
 
-          const outputAmount: any[] = [];
-          Object.entries(consolidatedAssets).forEach(([assetId, qty]) => {
-            const unit = assetId.replace(".", "");
-            outputAmount.push({ unit, quantity: qty.toString() });
-          });
-
-          const targetAddress = wasm.Address.from_bech32(walletStore.walletAddress);
-          const baseLovelace = wasm.BigNum.from_str("2000000"); // 2.0 ADA
-
-          if (outputAmount.length > 0) {
-            const txOutputValue = wasm.Value.new(baseLovelace);
-            const multiAsset = wasm.MultiAsset.new();
-
-            outputAmount.forEach((asset) => {
-              const policyId = asset.unit.substring(0, 56);
-              const assetNameHex = asset.unit.substring(56);
-
-              const policyHash = wasm.ScriptHash.from_hex(policyId);
-              const assets = wasm.Assets.new();
-              assets.insert(
-                wasm.AssetName.new(walletStore.fromHex(assetNameHex)),
-                wasm.BigNum.from_str(asset.quantity)
-              );
+            Object.entries(groupedByPolicy).forEach(([policyId, nameQtyMap]) => {
+              const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
+              const assets = CardanoWASM.Assets.new();
+              Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
+                assets.insert(
+                  CardanoWASM.AssetName.new(walletStore.fromHex(assetNameHex)),
+                  CardanoWASM.BigNum.from_str(qty.toString()),
+                );
+              });
               multiAsset.insert(policyHash, assets);
             });
-
-            txOutputValue.set_multiasset(multiAsset);
-            const txOutput = wasm.TransactionOutput.new(targetAddress, txOutputValue);
-            txBuilder.txBuilder.add_output(txOutput);
+            value.set_multiasset(multiAsset);
           }
 
-          // 4. Balance transaction (calculate fee and add change output)
-          txBuilder.txBuilder.add_change_if_needed(targetAddress);
+          const addressObj = CardanoWASM.Address.from_bech32(utxo.address);
+          txBuilder.txBuilder.add_regular_input(addressObj, txInput, value);
+        });
 
-          // 5. Build unsigned transaction — build_tx() compiles the finished WASM Transaction directly
-          const tx = txBuilder.txBuilder.build_tx();
-          const unsignedTxHex = walletStore.toHex(tx.to_bytes());
+        // 3. Group and aggregate native assets by policy ID for the consolidated output
+        const groupedByPolicy: Record<string, Record<string, number>> = {};
+        currentBatchInputs.forEach((u) => {
+          Object.entries(u.assets).forEach(([assetId, qty]) => {
+            const parts = assetId.split(".");
+            const policyId = parts[0];
+            const assetNameHex = parts[1] || "";
+            if (policyId) {
+              let policyMap = groupedByPolicy[policyId];
+              if (!policyMap) {
+                policyMap = {};
+                groupedByPolicy[policyId] = policyMap;
+              }
+              policyMap[assetNameHex] = (policyMap[assetNameHex] || 0) + qty;
+            }
+          });
+        });
 
-          // 5. Sign and Submit
-          const witnessSetHex = await walletStore.walletApi.signTx(
-            unsignedTxHex,
-            true,
+        const targetAddress = CardanoWASM.Address.from_bech32(
+          walletStore.walletAddress,
+        );
+        const baseLovelace = CardanoWASM.BigNum.from_str("2000000"); // 2.0 ADA
+
+        if (Object.keys(groupedByPolicy).length > 0) {
+          const txOutputValue = CardanoWASM.Value.new(baseLovelace);
+          const multiAsset = CardanoWASM.MultiAsset.new();
+
+          Object.entries(groupedByPolicy).forEach(([policyId, nameQtyMap]) => {
+            const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
+            const assets = CardanoWASM.Assets.new();
+            Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
+              assets.insert(
+                CardanoWASM.AssetName.new(walletStore.fromHex(assetNameHex)),
+                CardanoWASM.BigNum.from_str(qty.toString()),
+              );
+            });
+            multiAsset.insert(policyHash, assets);
+          });
+
+          txOutputValue.set_multiasset(multiAsset);
+          const txOutput = CardanoWASM.TransactionOutput.new(
+            targetAddress,
+            txOutputValue,
           );
-          const witnessSet = wasm.TransactionWitnessSet.from_bytes(
-            walletStore.fromHex(witnessSetHex),
-          );
-          const signedTx = wasm.Transaction.new(
-            tx.body(),
-            witnessSet,
-            tx.auxiliary_data(),
-          );
-
-          const signedTxHex = walletStore.toHex(signedTx.to_bytes());
-
-          txHash = await walletStore.walletApi.submitTx(signedTxHex);
-          console.log(txHash);
-        } else {
-          // Demo mode — simulate signing delay
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          txHash =
-            "tx_consolidated_" +
-            Math.random().toString(36).substring(2, 10) +
-            "_batch_" +
-            i;
+          txBuilder.txBuilder.add_output(txOutput);
         }
+
+        // 4. Balance transaction (calculate fee and add change output)
+        txBuilder.txBuilder.add_change_if_needed(targetAddress);
+
+        // 5. Build unsigned transaction — build_tx() compiles the finished WASM Transaction directly
+        const tx = txBuilder.txBuilder.build_tx();
+        const unsignedTxHex = walletStore.toHex(tx.to_bytes());
+
+        // 5. Sign and Submit
+        const witnessSetHex = await walletStore.walletApi.signTx(
+          unsignedTxHex,
+          true,
+        );
+        const witnessSet = CardanoWASM.TransactionWitnessSet.from_bytes(
+          walletStore.fromHex(witnessSetHex),
+        );
+        const signedTx = CardanoWASM.Transaction.new(
+          tx.body(),
+          witnessSet,
+          tx.auxiliary_data(),
+        );
+
+        const signedTxHex = walletStore.toHex(signedTx.to_bytes());
+
+        txHash = await walletStore.walletApi.submitTx(signedTxHex);
+        console.log(txHash);
 
         transactionHashes.value.push(txHash);
         batchStatus.value = "submitted";
 
         // 6. Wait for on-chain confirmation (Blockfrost polling)
-        if (walletStore.walletApi) {
-          batchStatus.value = "confirming";
-          const network = walletStore.selectedNetwork;
-          await waitForTxConfirm(txHash, getBlockfrostKey(network), network);
-          await walletStore.fetchUtxos();
-        } else {
-          // Demo mode — simulate confirmation delay
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-        }
+        batchStatus.value = "confirming";
+        const network = walletStore.selectedNetwork;
+        await waitForTxConfirm(txHash, getBlockfrostKey(network), network);
+        await walletStore.fetchUtxos();
       }
 
       batchStatus.value = "success";

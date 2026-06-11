@@ -6,7 +6,7 @@ import { ref, computed } from "vue";
 const walletStore = useWalletStore();
 const optimizerStore = useOptimizerStore();
 
-const isConsolidating = computed(() => optimizerStore.batchStatus !== "idle")
+const isConsolidating = computed(() => optimizerStore.isExecuting)
 
 // Filter value for maximum ADA limit
 const maxAdaFilter = ref<string>("");
@@ -70,6 +70,14 @@ const formatAda = (lovelace: number) => {
     maximumFractionDigits: 2,
   });
 };
+
+const resetFilters = () => {
+  maxAdaFilter.value = "";
+};
+
+defineExpose({
+  resetFilters
+});
 </script>
 
 <template>

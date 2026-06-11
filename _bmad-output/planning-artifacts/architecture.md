@@ -1,15 +1,8 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
-inputDocuments:
-  - "idea.md"
-  - "_bmad-output/planning-artifacts/prds/prd-clean-cardano-wallet-2026-05-29/prd.md"
-workflowType: 'architecture'
-project_name: 'clean-cardano-wallet'
-user_name: 'Venom'
-date: '2026-05-29'
-lastStep: 8
 status: 'complete'
-completedAt: '2026-05-29'
+completedAt: '2026-06-06'
+completedAt: '2026-06-05'
 ---
 
 # Architecture Decision Document
@@ -52,6 +45,11 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - **Wallet Connection State Persistence:** Trạng thái kết nối ví của người dùng phải được duy trì mượt mà giữa các trang và tự động khôi phục khi reload.
 - **Transaction Signing Failures Handlers:** Phải có cơ chế catch các lỗi người dùng từ chối ký ví (User Rejected), lỗi hết hạn giao dịch (Slot expired), hoặc trượt phí mạng lưới.
 - **Phishing URL Shielding:** Cách ly dữ liệu metadata chứa link lừa đảo của các Suspicious NFT khỏi DOM để đảm bảo tính an toàn tối đa cho trình duyệt người dùng.
+- **Network Switch Race Condition:** User switch network nhanh 2 lần — DEX request cũ chưa kịp abort, response overwrite kết quả mới. Dùng `AbortController` + `isCurrentNetwork` flag để reject stale response.
+- **Network-Aware Cache:** Liquidity cache phải keyed by network ID (`cacheKey = network + assetId`). Switch network → clear cache cũ, fetch mới.
+- **DEX Service Lifecycle:** Component mount trước khi DexService init → crash. Giải pháp: `watch(selectedNetwork)` + `await` service factory trước khi component render.
+- **Classification UI States:** Store cần expose `classificationStatus` map per token và global `dexStatus` (idle/loading/dexlive/fallback/error) để component render đúng trạng thái UI — spinner, badge xanh/dẻ/red, và warning banner.
+- **DEX Status Indicator:** UI cần badge nhỏ "🔍 DEX: Online" hoặc "🔍 Local: Limited" để user biết mức độ tin cậy của kết quả phân loại.
 
 ## Starter Template Evaluation
 
@@ -119,9 +117,12 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 - **Framework & SSR Safety:** Wrapping all reactive Web3 logic in Nuxt `<ClientOnly>` templates to completely prevent SSR mismatches and server-side node WASM loading crashes.
 
 **Important Decisions (Shape Architecture):**
-- **Frontend State Management:** Using **Pinia (v2.2.0)** to build reactive global stores (`wallet.ts`, `optimizer.ts`, `junk-detector.ts`) for consistent state management across different views.
-- **On-chain API Provider:** Using **Blockfrost API (v1)** as the primary backend provider/adapter to fetch wallet UTXOs and dispatch signed transactions.
-- **Junk Overrides Database:** Using **Browser LocalStorage** for saving custom whitelists and "Mark as Trusted" user overrides locally.
+- **Frontend State Management:** Using **Pinia (v2.2.0)** to build reactive global stores (`wallet.ts`, `optimizer.ts`, `cleaner.ts`) for consistent state management across different views.
+- **On-chain API Provider:** Using **Blockfrost API (v1)** as the primary backend provider/adapter to fetch wallet UTXOs, dispatch signed transactions, and fetch protocol parameters.
+- **DEX Liquidity Service:** Using **DexService abstraction** (`app/services/dex/`) with per-network implementations — `MinswapService` (Mainnet: Minswap Aggregator API, covers 17+ DEX protocols) and `HeuristicService` (Preprod: local whitelist/blacklist + name pattern).
+- **Protocol Parameters:** Fetch từ Blockfrost `/epochs/latest/parameters` qua utility `app/utils/protocolParams.ts`, không hardcode trong component.
+- **Network State:** Wallet store `selectedNetwork` làm nguồn truth duy nhất. Liquidity cache keyed by network ID để tránh stale data khi switch network.
+- **Junk Overrides Database:** Using **Browser LocalStorage** for saving custom whitelists and "Mark as Trusted" user overrides locally. Keyed by network: `adasweep-whitelist-overrides-{network}` (ví dụ `adasweep-whitelist-overrides-preprod`, `adasweep-whitelist-overrides-mainnet`).
 
 **Deferred Decisions (Post-MVP):**
 - **Community Spam Reporting Backend:** Postponed to later phases to avoid database and API hosting complexity in v1.
@@ -136,8 +137,11 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 - **Phishing Prevention:** Heavy sandbox shielding of Suspicious assets. Any media or external resource URL in Suspicious NFT metadata is dynamically stripped from the DOM; only plain text token titles and warning SVGs are rendered.
 
 ### API & Communication Patterns
-- **DEX Liquidity Validation:** Direct query to **Minswap API** (or appropriate DEX aggregator) for real-time asset pool evaluation (identifying tokens with $0 liquidity).
-- **Blockfrost Querying:** Secured HTTPS communications between browser client and Blockfrost nodes, utilizing API keys configured in standard Nuxt runtime configurations (.env).
+- **DEX Liquidity Validation:** Via **DexService abstraction** (`app/services/dex/`). Mainnet dùng `MinswapService` (gọi Minswap Aggregator API — covers 17+ DEX). Preprod dùng `HeuristicService` (local whitelist + name pattern, zero external call).
+- **DexService Error Handling:** Mọi lỗi từ DexService phải trả về `DexServiceError` type — không `throw raw Error`. Store catch error → set `ClassificationStatus = 'error' | 'fallback'`.
+- **Blockfrost Querying:** Secured HTTPS communications between browser client and Blockfrost nodes, utilizing API keys configured in standard Nuxt runtime configurations (.env). Dùng cho cả UTXO query lẫn protocol params fetch.
+- **Protocol Params Fetch:** `GET /epochs/latest/parameters` via Blockfrost, map response sang `Protocol` type từ `@hydra-sdk/core`. Cache trong memory (`Map<networkKey, {params, fetchedAt}>`) với TTL 1 epoch (~5 ngày). Keyed by network ID để tránh cross-network stale data.
+- **Network Switch:** `walletStore.selectedNetwork` watch → `cleanerStore` clear liquidity cache → re-fetch với service mới. Dùng `AbortController` để cancel pending request khi switch nhanh liên tiếp.
 
 ### Frontend Architecture
 - **Framework Stack:** **Nuxt 4 + Vue 3 + TypeScript**.
@@ -164,6 +168,7 @@ Nuxt 4 organizes source files under the unified `app/` folder:
 - `app/composables/` - Auto-imported Vue composables.
 - `app/stores/` - Auto-imported Pinia stores.
 - `app/pages/` - Router Pages.
+- `app/services/` - Service classes with lifecycle (DEX providers, external API wrappers).
 - `app/utils/` - Pure TypeScript utilities.
 
 ### Format Patterns
@@ -180,9 +185,128 @@ Nuxt 4 organizes source files under the unified `app/` folder:
   5. On failure: catch error, parse friendly ledger error messages, and set `error.value`.
   6. Finally: set `isLoading.value = false`.
 
+### Protocol Params Cache — Assumption Audit & Failure Modes
+
+| Assumption | Risk | Mitigation |
+|---|---|---|
+| Blockfrost always returns valid params | Blockfrost outage → không fetch được params | Stale-while-revalidate: giữ cached value cũ, dùng làm fallback nếu fetch fail |
+| Params không đổi mid-epoch | ✅ Cardano chỉ thay đổi params ở epoch boundary | TTL 5 ngày = đúng 1 epoch, safe |
+| Session không span epoch boundary | User để tab mở 5+ ngày → params stale | On tx build fail ("outside of validity range") → force-refetch |
+| Cache keyed by network ID | Preprod vs Mainnet params khác nhau | ✅ `Map<networkKey, ...>` đã xử lý |
+| Memory cache đủ | Single-tab, single-user | ✅ Không cần persist |
+
+**Cache implementation pattern:**
+```typescript
+// app/utils/protocolParams.ts
+const cache = new Map<string, {
+  params: Protocol
+  fetchedAt: number
+}>()
+const CACHE_TTL = 5 * 24 * 60 * 60 * 1000 // 1 epoch
+const NETWORK_KEY = (n: string) => `params_${n}`
+
+export async function fetchProtocolParams(
+  network: 'preprod' | 'mainnet'
+): Promise<Protocol> {
+  const key = NETWORK_KEY(network)
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+    return cached.params
+  }
+  try {
+    const params = await blockfrostFetch(network) // ...
+    cache.set(key, { params, fetchedAt: Date.now() })
+    return params
+  } catch (e) {
+    if (cached) return cached.params // stale-while-revalidate
+    throw e // no cache at all → propagate
+  }
+}
+```
+
+### ClassificationStatus Transition Matrix
+
+```
+         ┌─────────────────────────────────────────────┐
+         │               CURRENT STATE                 │
+         │  idle    loading   dexlive   fallback  error │
+┌────────┼─────────────────────────────────────────────┤
+│  idle   │  -        OK       OK        OK       OK   │ (reset)
+│ loading │  OK       DEDUP    OK        OK       OK   │
+│ dexlive │  -        OK       -         -        -    │
+│fallback │  -        OK       -         -        -    │
+│  error  │  -        OK       -         -        -    │
+└────────┴─────────────────────────────────────────────┘
+```
+
+**Rules:**
+- `DEDUP`: Nếu đã `loading`, ignore trigger thứ 2 (dùng `isFetching` flag)
+- `idle` ← any: reset khi switch network hoặc clear cache
+- `→ loading` luôn đi qua `idle` step (set idle trước, rồi set loading)
+- Timeout: nếu `loading` quá 15s → tự động set `error`
+
+**Safety net:**
+```typescript
+// cleaner.ts
+const FETCH_TIMEOUT = 15_000 // ms
+const classificationTimeout = new Map<string, ReturnType<typeof setTimeout>>()
+
+function startClassification(assetId: string) {
+  classificationTimeout.set(assetId, setTimeout(() => {
+    setStatus(assetId, 'error')
+  }, FETCH_TIMEOUT))
+}
+```
+
+### Key Type Definitions
+
+```typescript
+// app/services/dex/DexService.ts
+export type DexServiceErrorCode =
+  | 'NETWORK_ERROR'
+  | 'RATE_LIMITED'
+  | 'API_DOWN'
+  | 'PARSE_ERROR'
+  | 'UNSUPPORTED_NETWORK'
+
+export interface DexServiceError {
+  code: DexServiceErrorCode
+  message: string
+  retryAfter?: number // ms
+}
+
+export type LiquidityResult = {
+  assetId: string
+  hasLiquidity: boolean
+  tvl: number
+  source: 'minswap' | 'heuristic'
+  checkedAt: number
+}
+
+// app/stores/cleaner.ts
+export type ClassificationStatus =
+  | 'idle'        // chưa check
+  | 'loading'     // đang gọi DEX
+  | 'dexlive'     // DEX xác thực
+  | 'fallback'    // heuristic (DEX fail)
+  | 'error'       // lỗi ko xác định
+
+// Extend AssetClassification
+export interface AssetClassification {
+  // existing fields ...
+  status: ClassificationStatus
+  dexSource?: string  // 'Minswap Aggregator' | 'Local Heuristic'
+  phishingUrlShielded: boolean
+}
+```
+
 ### Anti-Patterns to Avoid
 - *Anti-Pattern:* Directly binding suspicious NFT metadata images to `<img>` source. (Causes phishing risk).
 - *Anti-Pattern:* Implementing blockchain interaction code on Nuxt server-side hooks (`useAsyncData`, `onServerPrefetch`). (Causes server WASM execution crash).
+- *Anti-Pattern:* Gộp DEX logic vào Pinia store. (Store khó test, khó mock. Tách ra `app/services/dex/` cho testable).
+- *Anti-Pattern:* Không abort request cũ khi switch network. (Race condition → stale data overwrite kết quả mới).
+- *Anti-Pattern:* `throw raw Error` từ DexService. (Phải dùng `DexServiceError` type để store handle đúng).
+- *Anti-Pattern:* Gọi DEX API trên Preprod. (Preprod dùng heuristic local — không cần, không nên gọi API ngoài).
 
 ## Project Structure & Boundaries
 
@@ -209,6 +333,12 @@ clean-cardano-wallet/
 │   ├── composables/
 │   │   ├── useCardanoWallet.ts
 │   │   └── useLocalStorage.ts
+│   ├── services/
+│   │   └── dex/
+│   │       ├── DexService.ts          (interface)
+│   │       ├── MinswapService.ts      (mainnet)
+│   │       ├── HeuristicService.ts    (preprod)
+│   │       └── index.ts               (factory: createDexService)
 │   ├── pages/
 │   │   ├── index.vue
 │   │   ├── optimizer.vue
@@ -220,7 +350,10 @@ clean-cardano-wallet/
 │   └── utils/
 │       ├── cardanoCodec.ts
 │       ├── minAdaCalculator.ts
-│       └── transactionBatcher.ts
+│       ├── protocolParams.ts
+│       ├── transactionBatcher.ts
+│       └── __tests__/
+│           └── dexService.spec.ts
 ```
 
 ### Architectural Boundaries
@@ -237,52 +370,75 @@ clean-cardano-wallet/
 
 ### Requirements to Structure Mapping
 
-- **FR-1 (Wallet Analysis & Health Score):** `app/stores/wallet.ts`, `app/components/WalletHealth.vue`, `app/components/WalletConnection.vue`.
-- **FR-2 (Spam Detection & Phishing Shielding):** `app/stores/cleaner.ts`, `app/components/JunkDetector.vue`, `app/composables/useLocalStorage.ts`.
-- **FR-3 (Smart/Manual UTXO Consolidation & Economic Warning):** `app/stores/optimizer.ts`, `app/components/UtxoTable.vue`, `app/components/OptimizerControls.vue`.
-- **FR-4 (Transaction Batching Limit):** `app/utils/transactionBatcher.ts` (Core algorithm chunking UTXOs).
-- **FR-5 (Spam Consolidation + Isolated Junk Box vs. Full Burn):** `app/stores/cleaner.ts` (Transaction compilation logic), `app/utils/minAdaCalculator.ts` (Locked-ADA calculations), `app/components/JunkBurner.vue`.
+- **FR-1 (DexService — Mainnet):** `app/services/dex/MinswapService.ts` (Minswap Aggregator API).
+- **FR-2 (DexService — Preprod):** `app/services/dex/HeuristicService.ts` (local whitelist + name pattern).
+- **FR-3 (Network-aware classification pipeline):** `app/stores/cleaner.ts` (6-step pipeline: whitelist → blacklist → system whitelist → name pattern → DEX → fallback), `app/services/dex/index.ts` (factory).
+- **FR-4 (Protocol params fetch):** `app/utils/protocolParams.ts` (Blockfrost `/epochs/latest/parameters`).
+- **FR-5 (Phishing URL Shielding):** `app/components/JunkDetector.vue` (template: `v-if="!asset.phishingUrlShielded"`), `app/stores/cleaner.ts` (flag computation).
+- **FR-6 (User Whitelist Management):** `app/composables/useLocalStorage.ts` (key per network: `adasweep-whitelist-overrides-{network}`), `app/stores/cleaner.ts` (markAsTrusted / markAsSuspicious actions).
+- **FR-7 (Network switch re-classify):** `app/stores/wallet.ts` (selectedNetwork), `app/stores/cleaner.ts` (watch + AbortController + cache clear).
+- **Wallet Analysis & Health Score:** `app/stores/wallet.ts`, `app/components/WalletHealth.vue`.
+- **UTXO Consolidation & Batching:** `app/stores/optimizer.ts`, `app/utils/transactionBatcher.ts`.
+
+**Note:** Classification Engine scope covers FR-1 to FR-7. Consolidate/burn features (old FR-3 to FR-5) là scope riêng, không thuộc PRD hiện tại.
 
 ## Architecture Validation Results
 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-- Nuxt 4, TypeScript, và Hydra SDK tích hợp hoàn hảo với nhau. Các gói thư viện thuộc hệ sinh thái Hydra SDK của Vtechcom Labs được tối ưu hóa cho môi trường trình duyệt, giúp triệt tiêu hoàn toàn các lỗi Webpack polyfill phức tạp thường gặp ở các thư viện cũ.
-- Tích hợp **Vite WebAssembly Configuration** trong `nuxt.config.ts` để loại trừ `@hydra-sdk/cardano-wasm` khỏi dependency optimization, giúp trình đóng gói Vite tải WASM mượt mà.
+- Nuxt 4 + Vue 3 + TypeScript + Hydra SDK + Blockfrost — tương thích hoàn toàn.
+- `DexService` abstraction + Pinia stores — service layer độc lập, không xung đột với store pattern.
+- `MinswapService` (Mainnet) + `HeuristicService` (Preprod) — cùng interface, khác implementation, plug-and-play qua factory.
+- `AbortController` pattern + cache keyed by network ID — race condition handling đồng bộ với store watch.
 
 **Pattern Consistency:**
-- Cấu trúc Setup Store trong Pinia hòa hợp tự nhiên với cơ chế Composition API của Vue 3 và tính năng tự động import của Nuxt 4.
-- Quy tắc đặt tên (PascalCase cho components, camelCase cho composables/stores/utils) nhất quán xuyên suốt toàn bộ hệ thống.
+- Setup Store syntax nhất quán xuyên suốt (`wallet.ts`, `cleaner.ts`, `optimizer.ts`).
+- Naming: PascalCase components, camelCase stores/utils/services, `policyId.assetNameHex` asset format.
+- Anti-patterns mới (DEX logic trong store, raw Error throw) bổ sung để tránh implementation drift.
 
 **Structure Alignment:**
-- Cấu trúc thư mục mới của Nuxt 4 (`app/`) định vị rõ ràng ranh giới vật lý: UI components chỉ hiển thị, Pinia stores chịu trách nhiệm xử lý logic và Hydra SDK tương tác trực tiếp với Blockfrost.
+- `app/services/dex/` là physical boundary rõ ràng cho DEX logic — không lẫn với store hay composable.
+- `app/utils/protocolParams.ts` là pure utility, không lifecycle — đúng vị trí.
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements Coverage:**
-- **100% các FR (từ FR-1 đến FR-5)** đều được ánh xạ rõ ràng và phân nhóm cụ thể vào các Store, Composable và Component tương ứng (Không có khoảng trống hoặc yêu cầu bị bỏ sót).
-- Thuật toán **Transaction Batching (FR-4)** được đóng gói độc lập trong `app/utils/transactionBatcher.ts` để dễ dàng viết unit test kiểm thử.
+**Functional Requirements Coverage (PRD 06/05):**
+- **FR-1 (DexService Mainnet):** `app/services/dex/MinswapService.ts` ✅
+- **FR-2 (DexService Preprod):** `app/services/dex/HeuristicService.ts` ✅
+- **FR-3 (Classification pipeline):** `app/stores/cleaner.ts` + `app/services/dex/index.ts` ✅
+- **FR-4 (Protocol params fetch):** `app/utils/protocolParams.ts` ✅
+- **FR-5 (Phishing shielding):** `app/components/JunkDetector.vue` + `cleaner.ts` ✅
+- **FR-6 (User whitelist):** `app/composables/useLocalStorage.ts` + `cleaner.ts` ✅
+- **FR-7 (Network switch re-classify):** `wallet.ts` + `cleaner.ts` (watch + AbortController) ✅
 
 **Non-Functional Requirements Coverage:**
-- **Bảo mật phi lưu ký (Non-Custodial):** Được đảm bảo do Hydra SDK chỉ build transaction và gửi yêu cầu ký qua CIP-30 extension của trình duyệt; dApp không lưu trữ private key.
-- **Chống Phishing:** Cơ chế media shielding (ẩn ảnh/iframe NFT spam) được tích hợp cứng vào logic xử lý DOM của component `JunkDetector.vue`.
-- **Hiệu năng & Trải nghiệm:** Việc sử dụng Vite client-side build giúp dApp phản hồi cực nhanh dưới 1 giây, loại bỏ hoàn toàn Hydration mismatch của SSR.
+- **Cross-network:** DexService factory pattern + cache keyed by network ID.
+- **Phishing Prevention:** `phishingUrlShielded` flag trong `AssetClassification`, template `v-if` block.
+- **Zero API call on Preprod:** `HeuristicService` không fetch HTTP.
+- **Race condition safe:** `AbortController` + `isCurrentNetwork` flag.
 
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-- Toàn bộ các quyết định kiến trúc cốt lõi đã được đưa ra, ghi nhận và xác minh phiên bản tương thích ổn định.
+- Tất cả critical decisions (DexService, protocol params, network switch, whitelist) đã document kèm rationale.
+- Party Mode insights integrated (edge cases, anti-patterns, test strategy, UI states).
 
 **Structure Completeness:**
-- Cấu trúc cây thư mục cực kỳ chi tiết, chỉ định chính xác tên file và trách nhiệm của từng file cho lập trình viên.
+- Cây thư mục đã update với `app/services/dex/`, `app/utils/protocolParams.ts`, `app/utils/__tests__/`.
 
 **Pattern Completeness:**
-- Các quy tắc nhất quán mã nguồn (naming, error handling lifecycle, client-side guards) đã được quy định chi tiết bằng các Good/Anti-patterns cụ thể.
+11 anti-patterns explicitly listed. Naming/structure/format/process patterns defined. DexService interface convention added.
 
 ### Gap Analysis Results
-- Không phát hiện bất kỳ khoảng trống kiến trúc **Nghiêm trọng (Critical)** hay **Quan trọng (Important)** nào.
-- *Khoảng trống Thứ yếu (Nice-to-Have):* Khuyến nghị bổ sung file `.env.example` mô tả chi tiết cách lấy API key của Blockfrost từ dashboard chính thức của họ. (Đã được tích hợp trong cấu trúc thư mục).
+
+**Important (minor):** ✅ Resolved (see key type definitions below)
+- ~~`DexServiceError` type chưa được định nghĩa~~ → Đã định nghĩa trong `DexService.ts` (xem Key Type Definitions).
+- ~~`ClassificationStatus` enum chưa được document~~ → Đã định nghĩa trong `cleaner.ts` (xem Key Type Definitions).
+
+**Nice-to-Have:**
+- UI state binding matrix (store status → component render) chưa được document chi tiết — có thể bổ sung trong UX spec.
+- ~~`protocolParams.ts` cần cache strategy document cụ thể~~ → Đã document: Map cache với TTL 1 epoch (~5 ngày), keyed by network ID (xem API & Communication Patterns).
 
 ### Architecture Completeness Checklist
 
@@ -305,18 +461,34 @@ clean-cardano-wallet/
 
 ### Architecture Readiness Assessment
 
-**Overall Status:** `READY FOR IMPLEMENTATION` (Sẵn sàng triển khai 100% - Đạt tối đa 16/16 chỉ mục đánh giá kiểm định).
+**Overall Status:** `READY FOR IMPLEMENTATION` (Sẵn sàng triển khai — 16/16 checklist items đạt, chỉ còn minor gaps không blocking).
 
-**Confidence Level:** High (Cực kỳ tự tin nhờ sự phối hợp chặt chẽ giữa các quyết định kỹ thuật và tính thực tế của SDK).
+**Confidence Level:** High
+
+**Key Strengths:**
+- DexService abstraction cho phép test dễ dàng (mock interface) + mở rộng DEX provider sau này.
+- Preprod zero external call — không phụ thuộc API khi dev/test.
+- Network switch handle race condition ngay từ architecture (AbortController + cache key).
+- UI states exposure cho phép UX render chính xác 4 trạng thái.
+
+**Areas for Future Enhancement:**
+- UI state binding matrix (store status → component render) — chi tiết hóa trong UX spec.
+- `DexServiceError` và `ClassificationStatus` — đã định nghĩa, cần verify khi implement.
 
 ### Implementation Handoff
 
 **AI Agent Guidelines:**
-- Tuân thủ tuyệt đối cấu trúc Setup Store của Pinia trong `app/stores/`.
-- Bắt buộc bọc các logic Web3 trong thẻ `<ClientOnly>` ở phía view.
-- Không được phép tự ý thay đổi quy tắc đặt tên tệp tin.
+- `DexService` interface là contract — MinswapService và HeuristicService phải implement đúng signature.
+- `DexServiceError` dùng cho tất cả error paths — không `throw new Error(...)`.
+- `classificationStatus` per token phải được expose từ `cleaner.ts` — component chỉ render, không tự fetch.
+- Network switch: `AbortController.abort()` request cũ trước khi fetch mới.
+- Preprod: `createDexService('preprod')` trả về HeuristicService — không gọi HTTP.
+- Test: Unit test DexService với mock fetch; integration test Preprod heuristic không cần mock.
 
-**First Implementation Priority:**
-Khởi tạo cấu trúc dự án Nuxt 4 sạch bằng lệnh:
-`npx nuxi@latest init ./ --packageManager npm --gitInit false --force`
-sau đó cài đặt hai gói Hydra SDK cốt lõi.
+**First Implementation Priority (updated):**
+1. `app/services/dex/DexService.ts` — interface + types
+2. `app/services/dex/HeuristicService.ts` — Preprod implementation (dễ, không phụ thuộc API)
+3. `app/utils/protocolParams.ts` — Blockfrost fetch utility
+4. `app/services/dex/index.ts` — factory function
+5. Update `app/stores/cleaner.ts` — network-aware fetch + classificationStatus
+6. `app/services/dex/MinswapService.ts` — Mainnet implementation (cần test với API key thật)

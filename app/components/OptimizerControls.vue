@@ -5,7 +5,7 @@ import { useWalletStore } from '~/stores/wallet'
 const optimizerStore = useOptimizerStore()
 const walletStore = useWalletStore()
 
-let resetTimer: ReturnType<typeof setTimeout> | null = null
+
 
 const handleConsolidate = async () => {
   await optimizerStore.executeConsolidation()
@@ -24,17 +24,6 @@ const cardanoscanUrl = computed(() => {
   return base + hash
 })
 
-watch(() => optimizerStore.batchStatus, (status) => {
-  if (status === 'success') {
-    resetTimer = setTimeout(() => {
-      optimizerStore.resetBatchFlow()
-    }, 2500)
-  }
-})
-
-onUnmounted(() => {
-  if (resetTimer) clearTimeout(resetTimer)
-})
 </script>
 
 <template>
@@ -42,7 +31,7 @@ onUnmounted(() => {
     <h3 class="text-lg font-bold text-white mb-6">Optimizer Controller</h3>
 
     <!-- UNSELECTED STATE -->
-    <div v-if="optimizerStore.selectedKeys.length === 0" class="text-center py-10 px-4">
+    <div v-if="optimizerStore.selectedKeys.length === 0 && !optimizerStore.isExecuting" class="text-center py-10 px-4">
       <p class="text-slate-400 text-sm leading-relaxed">
         Select individual UTXOs from the list or click <strong class="text-white">Select All Dust</strong> to calculate potential fee savings.
       </p>

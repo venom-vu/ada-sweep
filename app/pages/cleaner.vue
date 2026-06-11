@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import JunkDetector from "~/components/JunkDetector.vue";
 import JunkBurner from "~/components/JunkBurner.vue";
+import { toRef } from "vue";
 import { toast } from "vue-sonner";
 import { useCleanerStore } from "~/stores/cleaner";
 import { useWalletStore } from "~/stores/wallet";
-import { onMounted } from "vue";
 
 definePageMeta({
   auth: true,
@@ -25,25 +25,42 @@ useSeoMeta({
     "Cardano spam token burner, burn Cardano spam tokens, recover locked ADA, Cardano wallet cleaner",
 });
 
-const selectedJunkIds = ref<string[]>([]);
+const selectedJunkIds = toRef(cleanerStore, "selectedJunkIds");
+const junkDetectorRef = ref<InstanceType<typeof JunkDetector> | null>(null);
 
 const onSelectedJunkUpdate = (ids: string[]) => {
   selectedJunkIds.value = ids;
 };
 
-const onBurnSuccess = () => {
-  selectedJunkIds.value = [];
-  toast.success("Junk sweep completed on-chain!", { id: "junk-sweep" });
-};
+watch(
+  () => cleanerStore.burnerStatus,
+  (status) => {
+    if (status === "success") {
+      toast.success("Junk sweep completed on-chain!", { id: "junk-sweep" });
+      selectedJunkIds.value = [];
+      junkDetectorRef.value?.resetFilters();
+      walletStore.fetchUtxos();
+      setTimeout(() => {
+        cleanerStore.resetBurnerFlow();
+      }, 2500);
+    }
+    if (status === "error") {
+      toast.error(cleanerStore.executionError || "Junk sweep failed", {
+        id: "junk-sweep",
+      });
+      setTimeout(() => {
+        cleanerStore.resetBurnerFlow();
+      }, 2500);
+    }
+  },
+  { immediate: true }
+);
 
-const onBurnError = (msg: string) => {
-  toast.error(msg || "Junk sweep failed", { id: "junk-sweep" });
-};
-
-// Auto-scan assets on mount
-onMounted(() => {
-  if (walletStore.utxos.length > 0) {
-    cleanerStore.fetchDexLiquidity();
+onUnmounted(() => {
+  if (!cleanerStore.isExecuting) {
+    selectedJunkIds.value = [];
+    junkDetectorRef.value?.resetFilters();
+    cleanerStore.resetBurnerFlow();
   }
 });
 </script>
@@ -51,18 +68,17 @@ onMounted(() => {
 <template>
   <div>
     <ClientOnly>
-      <!-- CONNECTED STATE -->
       <div class="flex flex-col gap-8">
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           <JunkDetector
+            ref="junkDetectorRef"
             class="lg:col-span-3"
+            :selected-junk="selectedJunkIds"
             @update:selectedJunk="onSelectedJunkUpdate"
           />
           <JunkBurner
             class="lg:col-span-2"
             :selectedJunk="selectedJunkIds"
-            @burnSuccess="onBurnSuccess"
-            @burnError="onBurnError"
           />
         </div>
       </div>

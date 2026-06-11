@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validation Report — ADASweep Classification Engine PRD</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2em auto; padding: 0 1.5em; line-height: 1.6; color: #1a1a2e; }
+  h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: .25em; }
+  h2 { margin-top: 1.5em; }
+  .grade { display: inline-block; padding: .25em .75em; border-radius: 4px; font-weight: 600; font-size: .9em; }
+  .grade-excellent { background: #d4edda; color: #155724; }
+  .grade-good { background: #fff3cd; color: #856404; }
+  .grade-fair { background: #fde8e8; color: #9b1c1c; }
+  .grade-poor { background: #f8d7da; color: #721c24; }
+  .verdict { font-weight: 600; }
+  .verdict-strong { color: #155724; }
+  .verdict-adequate { color: #856404; }
+  .verdict-thin { color: #9b1c1c; }
+  .verdict-broken { color: #721c24; }
+  .badge { display: inline-block; padding: .15em .5em; border-radius: 3px; font-size: .8em; font-weight: 600; }
+  .badge-critical { background: #f8d7da; color: #721c24; }
+  .badge-high { background: #fde8e8; color: #9b1c1c; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e2e8f0; color: #4a5568; }
+  .dimension { margin: 1em 0; padding: 1em; border-radius: 6px; border: 1px solid #e2e8f0; }
+  details { margin: .5em 0; }
+  summary { cursor: pointer; font-weight: 500; }
+  .finding { margin: .5em 0; padding: .5em; border-left: 3px solid #e2e8f0; }
+  .finding-critical, .finding-high { border-left-color: #f5c6cb; }
+  .finding-medium { border-left-color: #ffeeba; }
+  .finding-low { border-left-color: #c3cfe0; }
+  footer { margin-top: 3em; font-size: .85em; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 1em; }
+</style>
+</head>
+<body>
+
+<h1>Validation Report — ADASweep Multi-Network DEX-Powered Asset Classification Engine</h1>
+<p><span class="grade grade-excellent">Excellent</span></p>
+<ul>
+  <li><strong>PRD:</strong> <code>_bmad-output/planning-artifacts/prds/prd-clean-cardano-wallet-2026-06-05/prd.md</code></li>
+  <li><strong>Rubric:</strong> <code>assets/prd-validation-checklist.md</code></li>
+  <li><strong>Run at:</strong> 2026-06-06T12:00:00Z</li>
+</ul>
+
+<h2>Overall verdict</h2>
+<p>Strong, well-structured PRD with clear decisions, honest scoping, and testable FRs. The downstream architecture workflow validated it as "ready for implementation" — the core decisions held up. Two clusters of gaps emerged during architecture: (1) UTXO scanning fallback (FR-7) was removed in architecture, and (2) technical refinements (DexServiceError, ClassificationStatus, AbortController, 15s timeout) are absent. These are alignment gaps, not structural flaws.</p>
+
+<h2>Dimension verdicts</h2>
+<ul>
+  <li>Decision-readiness — <span class="verdict verdict-strong">Strong</span></li>
+  <li>Substance over theater — <span class="verdict verdict-strong">Strong</span></li>
+  <li>Strategic coherence — <span class="verdict verdict-strong">Strong</span></li>
+  <li>Done-ness clarity — <span class="verdict verdict-adequate">Adequate</span></li>
+  <li>Scope honesty — <span class="verdict verdict-strong">Strong</span></li>
+  <li>Downstream usability — <span class="verdict verdict-strong">Strong</span></li>
+  <li>Shape fit — <span class="verdict verdict-strong">Strong</span></li>
+</ul>
+
+<h2>Findings by severity</h2>
+
+<h3>Medium (2)</h3>
+<div class="finding finding-medium">
+  <span class="badge badge-medium">medium</span>
+  <strong>Done-ness clarity</strong> — No error contract for DexService (§4.1 FR-1)
+  <p>FR-1 specifies <code>returns LiquidityResult | null</code> but doesn't define an error type. Architecture later added <code>DexServiceError</code> with codes (NETWORK_ERROR, RATE_LIMITED, API_DOWN, PARSE_ERROR, UNSUPPORTED_NETWORK). Without this, implementers may use raw <code>throw Error</code> — flagged as anti-pattern.</p>
+  <p><em>Fix:</em> Add <code>DexServiceError</code> type to DexService interface in FR-1.</p>
+</div>
+<div class="finding finding-medium">
+  <span class="badge badge-medium">medium</span>
+  <strong>Done-ness clarity</strong> — UI states undefined (§4.5 Pipeline)
+  <p>Classification pipeline shows 8 logic steps but doesn't define what UI renders during loading, on DEX failure, or on error. Architecture later added <code>ClassificationStatus</code> enum (<code>idle | loading | dexlive | fallback | error</code>) with a transition matrix and 15s timeout safety net.</p>
+  <p><em>Fix:</em> Add status field to pipeline output and define UI binding matrix.</p>
+</div>
+
+<h3>Low (2)</h3>
+<div class="finding finding-low">
+  <span class="badge badge-low">low</span>
+  <strong>Decision-readiness</strong> — FR-7 may be stale (§4.2)
+  <p>UTXO scanning fallback (FR-7) was removed in architecture — Preprod uses HeuristicService, Mainnet Minswap Aggregator. PRD still lists it as a feature for both networks.</p>
+  <p><em>Fix:</em> Remove FR-7 or re-scope to Mainnet-only fallback option.</p>
+</div>
+<div class="finding finding-low">
+  <span class="badge badge-low">low</span>
+  <strong>Downstream usability</strong> — Missing Glossary entry (§4.1 FR-3)
+  <p><code>dexCheckFailed: true</code> flag referenced in FR-3 not defined in Glossary. Architecture renamed to <code>dexSource</code> + <code>ClassificationStatus</code>.</p>
+  <p><em>Fix:</em> Add to Glossary or align with architecture naming.</p>
+</div>
+
+<h2>Mechanical notes</h2>
+<ul>
+  <li>Glossary: <code>dexCheckFailed</code> flag in FR-3 not in Glossary.</li>
+  <li>FR-7 (UTXO scanning) removed in architecture alignment — may become stale.</li>
+  <li>Assumptions Index complete and cross-referenced (3/3).</li>
+  <li>UJ protagonist consistent (Venom).</li>
+  <li>FR/UJ/SM IDs contiguous and unique.</li>
+</ul>
+
+<h2>Reviewer files</h2>
+<ul>
+  <li><code>review-rubric.md</code></li>
+</ul>
+
+<footer>
+  <p>Rubric: <code>assets/prd-validation-checklist.md</code> · 2026-06-06T12:00:00Z</p>
+</footer>
+
+</body>
+</html>

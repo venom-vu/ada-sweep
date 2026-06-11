@@ -2,9 +2,8 @@
 import "~/assets/css/tailwind.css";
 import "~/assets/css/app.css";
 import { useWalletStore } from "~/stores/wallet";
-import { onMounted, watch } from "vue";
 import { useRequestURL, useSeoMeta } from "#imports";
-import { Toaster, toast } from "vue-sonner";
+import { Toaster } from "vue-sonner";
 
 const walletStore = useWalletStore();
 
@@ -13,14 +12,8 @@ onMounted(async () => {
   await walletStore.tryAutoConnect();
 });
 
-watch(() => walletStore.isConnected, (connected, was) => {
-  if (connected && !was) {
-    toast.success(`Wallet connected: ${walletStore.walletName}`)
-  }
-})
-
 const url = useRequestURL();
-const ogImageUrl = `${url.origin}/og-image.png`;
+const ogImageUrl = `${url.origin}/og-image.webp`;
 
 useSeoMeta({
   ogImage: ogImageUrl,
