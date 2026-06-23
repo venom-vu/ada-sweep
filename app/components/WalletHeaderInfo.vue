@@ -45,9 +45,6 @@ const handleConnectClick = () => {
 const handleDisconnect = () => {
   closeDropdown();
   walletStore.disconnectWallet();
-  if (route.path !== "/") {
-    navigateTo("/");
-  }
 };
 
 const copyAddress = async () => {

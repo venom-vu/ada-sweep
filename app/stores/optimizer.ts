@@ -1,32 +1,23 @@
 import { useWalletStore } from "./wallet";
 import { chunkUtxos, type UTXO } from "~/utils/transactionBatcher";
 import { TxBuilder } from "@hydra-sdk/transaction";
-import { waitForTxConfirm } from "~/utils/blockfrostWatcher";
 import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 
 export const useOptimizerStore = defineStore("optimizer", () => {
   const walletStore = useWalletStore();
-  const config = useRuntimeConfig();
-  const blockfrostApiKeyPreprod = config.public
-    .blockfrostApiKeyPreprod as string;
-  const blockfrostApiKeyMainnet = config.public
-    .blockfrostApiKeyMainnet as string;
-
-  const getBlockfrostKey = (network: "preprod" | "mainnet"): string => {
-    return network === "mainnet"
-      ? blockfrostApiKeyMainnet
-      : blockfrostApiKeyPreprod;
-  };
 
   // Checklist tracking selected UTXO keys formatted as "txHash#index"
   const selectedKeys = ref<string[]>([]);
+
+  // A computed Set of selectedKeys for fast O(1) lookups
+  const selectedKeysSet = computed(() => new Set(selectedKeys.value));
 
   // Batching workflow state
   const isExecuting = ref(false);
   const currentBatchIndex = ref(0);
   const totalBatches = ref(0);
   const batchStatus = ref<
-    "idle" | "signing" | "submitted" | "confirming" | "success" | "error"
+    "idle" | "signing" | "submitted" | "success" | "error"
   >("idle");
   const transactionHashes = ref<string[]>([]);
   const executionError = ref<string | null>(null);
@@ -38,8 +29,9 @@ export const useOptimizerStore = defineStore("optimizer", () => {
 
   // Map selected keys to full UTXO objects
   const selectedUtxos = computed<UTXO[]>(() => {
+    const keysSet = selectedKeysSet.value;
     return walletStore.utxos.filter((utxo) =>
-      selectedKeys.value.includes(`${utxo.txHash}#${utxo.index}`),
+      keysSet.has(`${utxo.txHash}#${utxo.index}`),
     );
   });
 
@@ -101,6 +93,45 @@ export const useOptimizerStore = defineStore("optimizer", () => {
     selectedKeys.value = [...dustKeys];
   };
 
+  // Helper to group flat asset objects by policy id
+  const groupAssetsByPolicy = (assets: Record<string, number>): Record<string, Record<string, number>> => {
+    const grouped: Record<string, Record<string, number>> = {};
+    Object.entries(assets).forEach(([assetId, qty]) => {
+      const parts = assetId.split(".");
+      const policyId = parts[0];
+      const assetNameHex = parts[1] || "";
+      if (policyId) {
+        let policyMap = grouped[policyId];
+        if (!policyMap) {
+          policyMap = {};
+          grouped[policyId] = policyMap;
+        }
+        policyMap[assetNameHex] = (policyMap[assetNameHex] || 0) + qty;
+      }
+    });
+    return grouped;
+  };
+
+  // Helper to build CardanoWASM.MultiAsset from grouped assets
+  const buildMultiAsset = (
+    grouped: Record<string, Record<string, number>>,
+    fromHex: (hex: string) => Uint8Array
+  ) => {
+    const multiAsset = CardanoWASM.MultiAsset.new();
+    Object.entries(grouped).forEach(([policyId, nameQtyMap]) => {
+      const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
+      const assets = CardanoWASM.Assets.new();
+      Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
+        assets.insert(
+          CardanoWASM.AssetName.new(fromHex(assetNameHex)),
+          CardanoWASM.BigNum.from_str(qty.toString()),
+        );
+      });
+      multiAsset.insert(policyHash, assets);
+    });
+    return multiAsset;
+  };
+
   // Action: Build and run the batch transaction flow
   const executeConsolidation = async () => {
     if (selectedUtxos.value.length === 0) return;
@@ -140,34 +171,8 @@ export const useOptimizerStore = defineStore("optimizer", () => {
             CardanoWASM.BigNum.from_str(utxo.lovelace.toString()),
           );
           if (Object.keys(utxo.assets).length > 0) {
-            const multiAsset = CardanoWASM.MultiAsset.new();
-            const groupedByPolicy: Record<string, Record<string, number>> = {};
-            
-            Object.entries(utxo.assets).forEach(([assetId, qty]) => {
-              const parts = assetId.split(".");
-              const policyId = parts[0];
-              const assetNameHex = parts[1] || "";
-              if (policyId) {
-                let policyMap = groupedByPolicy[policyId];
-                if (!policyMap) {
-                  policyMap = {};
-                  groupedByPolicy[policyId] = policyMap;
-                }
-                policyMap[assetNameHex] = qty;
-              }
-            });
-
-            Object.entries(groupedByPolicy).forEach(([policyId, nameQtyMap]) => {
-              const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
-              const assets = CardanoWASM.Assets.new();
-              Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
-                assets.insert(
-                  CardanoWASM.AssetName.new(walletStore.fromHex(assetNameHex)),
-                  CardanoWASM.BigNum.from_str(qty.toString()),
-                );
-              });
-              multiAsset.insert(policyHash, assets);
-            });
+            const grouped = groupAssetsByPolicy(utxo.assets);
+            const multiAsset = buildMultiAsset(grouped, walletStore.fromHex);
             value.set_multiasset(multiAsset);
           }
 
@@ -176,20 +181,10 @@ export const useOptimizerStore = defineStore("optimizer", () => {
         });
 
         // 3. Group and aggregate native assets by policy ID for the consolidated output
-        const groupedByPolicy: Record<string, Record<string, number>> = {};
+        const aggregatedAssets: Record<string, number> = {};
         currentBatchInputs.forEach((u) => {
           Object.entries(u.assets).forEach(([assetId, qty]) => {
-            const parts = assetId.split(".");
-            const policyId = parts[0];
-            const assetNameHex = parts[1] || "";
-            if (policyId) {
-              let policyMap = groupedByPolicy[policyId];
-              if (!policyMap) {
-                policyMap = {};
-                groupedByPolicy[policyId] = policyMap;
-              }
-              policyMap[assetNameHex] = (policyMap[assetNameHex] || 0) + qty;
-            }
+            aggregatedAssets[assetId] = (aggregatedAssets[assetId] || 0) + qty;
           });
         });
 
@@ -198,23 +193,12 @@ export const useOptimizerStore = defineStore("optimizer", () => {
         );
         const baseLovelace = CardanoWASM.BigNum.from_str("2000000"); // 2.0 ADA
 
-        if (Object.keys(groupedByPolicy).length > 0) {
+        if (Object.keys(aggregatedAssets).length > 0) {
           const txOutputValue = CardanoWASM.Value.new(baseLovelace);
-          const multiAsset = CardanoWASM.MultiAsset.new();
-
-          Object.entries(groupedByPolicy).forEach(([policyId, nameQtyMap]) => {
-            const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
-            const assets = CardanoWASM.Assets.new();
-            Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
-              assets.insert(
-                CardanoWASM.AssetName.new(walletStore.fromHex(assetNameHex)),
-                CardanoWASM.BigNum.from_str(qty.toString()),
-              );
-            });
-            multiAsset.insert(policyHash, assets);
-          });
-
+          const grouped = groupAssetsByPolicy(aggregatedAssets);
+          const multiAsset = buildMultiAsset(grouped, walletStore.fromHex);
           txOutputValue.set_multiasset(multiAsset);
+          
           const txOutput = CardanoWASM.TransactionOutput.new(
             targetAddress,
             txOutputValue,
@@ -250,12 +234,6 @@ export const useOptimizerStore = defineStore("optimizer", () => {
 
         transactionHashes.value.push(txHash);
         batchStatus.value = "submitted";
-
-        // 6. Wait for on-chain confirmation (Blockfrost polling)
-        batchStatus.value = "confirming";
-        const network = walletStore.selectedNetwork;
-        await waitForTxConfirm(txHash, getBlockfrostKey(network), network);
-        await walletStore.fetchUtxos();
       }
 
       batchStatus.value = "success";
@@ -279,8 +257,15 @@ export const useOptimizerStore = defineStore("optimizer", () => {
     executionError.value = null;
   };
 
+  // Action: Reset/clear everything when leaving page
+  const clearStoreState = () => {
+    selectedKeys.value = [];
+    resetBatchFlow();
+  };
+
   return {
     selectedKeys,
+    selectedKeysSet,
     isExecuting,
     currentBatchIndex,
     totalBatches,
@@ -300,5 +285,6 @@ export const useOptimizerStore = defineStore("optimizer", () => {
     selectDust,
     executeConsolidation,
     resetBatchFlow,
+    clearStoreState,
   };
 });

@@ -3,7 +3,6 @@ import { toRef, computed } from "vue";
 import { useWalletStore } from "~/stores/wallet";
 import { useCleanerStore } from "~/stores/cleaner";
 import { calculateMinAda } from "~/utils/minAdaCalculator";
-import { waitForTxConfirm } from "~/utils/blockfrostWatcher";
 import { fetchProtocolParams } from "~/utils/protocolParams";
 import { TxBuilder } from "@hydra-sdk/transaction";
 import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
@@ -55,9 +54,12 @@ function getDeadAddress(): string {
   return addr.to_address().to_bech32();
 }
 
+const selectedJunkSet = computed(() => new Set(props.selectedJunk));
+
 const selectedAssetsDetails = computed(() => {
+  const set = selectedJunkSet.value;
   return cleanerStore.classifiedAssets.filter((asset) =>
-    props.selectedJunk.includes(asset.assetId),
+    set.has(asset.assetId),
   );
 });
 
@@ -72,9 +74,10 @@ const newJunkBoxMinAda = computed(() => {
 
 const currentLockedAda = computed(() => {
   let lovelaceSum = 0;
+  const set = selectedJunkSet.value;
   walletStore.utxos.forEach((utxo) => {
     const containsSelected = Object.keys(utxo.assets).some((id) =>
-      props.selectedJunk.includes(id),
+      set.has(id),
     );
     if (containsSelected) {
       lovelaceSum += utxo.lovelace;
@@ -104,9 +107,7 @@ const reclaimNote = computed(() => {
 const feePercentage = computed(() => {
   if (currentLockedAda.value === 0) return 0;
   return Math.round((0.2 / currentLockedAda.value) * 100);
-});
-
-const handleExecuteCleanup = async () => {
+});const handleExecuteCleanup = async () => {
   if (props.selectedJunk.length === 0) return;
   if (!walletStore.walletApi) {
     throw new Error("Wallet not connected");
@@ -116,8 +117,9 @@ const handleExecuteCleanup = async () => {
   transactionHash.value = null;
 
   try {
+    const set = selectedJunkSet.value;
     const junkUtxos = walletStore.utxos.filter((utxo) =>
-      Object.keys(utxo.assets).some((id) => props.selectedJunk.includes(id)),
+      Object.keys(utxo.assets).some((id) => set.has(id)),
     );
 
     if (junkUtxos.length === 0)
@@ -142,7 +144,7 @@ const handleExecuteCleanup = async () => {
           (u) =>
             !junkUtxos.includes(u) &&
             !Object.keys(u.assets).some((id) =>
-              props.selectedJunk.includes(id),
+              set.has(id),
             ),
         )
         .sort((a, b) => b.lovelace - a.lovelace);
@@ -229,29 +231,6 @@ const handleExecuteCleanup = async () => {
     const signedTxHex = walletStore.toHex(signedTx.to_bytes());
     const txHash = await walletStore.walletApi.submitTx(signedTxHex);
     transactionHash.value = txHash;
-    burnerStatus.value = "confirming";
-
-    try {
-      await waitForTxConfirm(
-        txHash,
-        blockfrostKey.value,
-        walletStore.selectedNetwork,
-      );
-      await walletStore.fetchUtxos();
-    } catch (confirmErr: any) {
-      console.error(
-        "Confirmation watcher failed, attempting fallback fetch",
-        confirmErr,
-      );
-      await walletStore.fetchUtxos();
-      emit(
-        "burnError",
-        "Transaction submitted but not yet confirmed on-chain.",
-      );
-    }
-
-
-
     burnerStatus.value = "success";
   } catch (err: any) {
     console.error(err);
@@ -521,10 +500,10 @@ const handleExecuteCleanup = async () => {
         </button>
       </div>
 
-      <!-- SUBMITTED / CONFIRMING: Show tx hash + waiting on-chain -->
+      <!-- SUBMITTED: Show tx hash + submitting -->
       <div
         v-else-if="
-          burnerStatus === 'submitted' || burnerStatus === 'confirming'
+          burnerStatus === 'submitted'
         "
         class="flex flex-col gap-3"
       >
@@ -566,7 +545,7 @@ const handleExecuteCleanup = async () => {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
-          Confirming on-chain...
+          Submitting to network...
         </button>
       </div>
     </div>

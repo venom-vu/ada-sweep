@@ -1,9 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Home Page -->
     <url>
         <loc>https://adasweep.xyz/</loc>
-        <lastmod>2026-06-03</lastmod>
+        <lastmod>2026-06-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>1.0</priority>
+    </url>
+    <!-- CBOR Deserializer -->
+    <url>
+        <loc>https://adasweep.xyz/cbor</loc>
+        <lastmod>2026-06-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- Dashboard -->
+    <url>
+        <loc>https://adasweep.xyz/dashboard</loc>
+        <lastmod>2026-06-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- Optimizer -->
+    <url>
+        <loc>https://adasweep.xyz/optimizer</loc>
+        <lastmod>2026-06-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- Cleaner -->
+    <url>
+        <loc>https://adasweep.xyz/cleaner</loc>
+        <lastmod>2026-06-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- Sign Data -->
+    <url>
+        <loc>https://adasweep.xyz/sign</loc>
+        <lastmod>2026-06-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
     </url>
 </urlset>

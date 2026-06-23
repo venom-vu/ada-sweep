@@ -438,11 +438,12 @@ export const useCleanerStore = defineStore("cleaner", () => {
   );
 
   const burnerStatus = ref<
-    "idle" | "signing" | "submitted" | "confirming" | "success" | "error"
+    "idle" | "signing" | "submitted" | "success" | "error"
   >("idle");
   const transactionHash = ref<string | null>(null);
   const executionError = ref<string | null>(null);
   const selectedJunkIds = ref<string[]>([]);
+  const selectedJunkIdsSet = computed(() => new Set(selectedJunkIds.value));
 
   const isExecuting = computed(
     () =>
@@ -456,6 +457,12 @@ export const useCleanerStore = defineStore("cleaner", () => {
     transactionHash.value = null;
     executionError.value = null;
     selectedJunkIds.value = [];
+  };
+
+  // Action: Reset/clear everything when leaving page
+  const clearStoreState = () => {
+    selectedJunkIds.value = [];
+    resetBurnerFlow();
   };
 
   return {
@@ -478,5 +485,7 @@ export const useCleanerStore = defineStore("cleaner", () => {
     isExecuting,
     resetBurnerFlow,
     selectedJunkIds,
+    selectedJunkIdsSet,
+    clearStoreState,
   };
 });

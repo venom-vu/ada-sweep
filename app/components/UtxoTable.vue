@@ -25,28 +25,28 @@ const filteredUtxos = computed(() => {
 // Check if all currently filtered UTXOs are selected
 const isAllSelected = computed(() => {
   if (filteredUtxos.value.length === 0) return false;
+  const set = optimizerStore.selectedKeysSet;
   return filteredUtxos.value.every((utxo) =>
-    optimizerStore.selectedKeys.includes(`${utxo.txHash}#${utxo.index}`),
+    set.has(`${utxo.txHash}#${utxo.index}`),
   );
 });
 
 // Select all currently filtered UTXOs
 const selectFiltered = () => {
+  const currentKeys = new Set(optimizerStore.selectedKeys);
   filteredUtxos.value.forEach((utxo) => {
-    const key = `${utxo.txHash}#${utxo.index}`;
-    if (!optimizerStore.selectedKeys.includes(key)) {
-      optimizerStore.selectedKeys.push(key);
-    }
+    currentKeys.add(`${utxo.txHash}#${utxo.index}`);
   });
+  optimizerStore.selectedKeys = Array.from(currentKeys);
 };
 
 // Deselect only the currently filtered UTXOs
 const deselectFiltered = () => {
-  const filteredKeys = filteredUtxos.value.map(
-    (utxo) => `${utxo.txHash}#${utxo.index}`,
+  const filteredKeys = new Set(
+    filteredUtxos.value.map((utxo) => `${utxo.txHash}#${utxo.index}`),
   );
   optimizerStore.selectedKeys = optimizerStore.selectedKeys.filter(
-    (key) => !filteredKeys.includes(key),
+    (key) => !filteredKeys.has(key),
   );
 };
 
@@ -252,7 +252,7 @@ defineExpose({
               :key="`${utxo.txHash}#${utxo.index}`"
               class="transition-colors hover:bg-white/[0.02]"
               :class="{
-                'bg-violet-500/[0.025]': optimizerStore.selectedKeys.includes(
+                'bg-violet-500/[0.025]': optimizerStore.selectedKeysSet.has(
                   `${utxo.txHash}#${utxo.index}`,
                 ),
                 'cursor-pointer': !isConsolidating,
@@ -264,7 +264,7 @@ defineExpose({
                 <input
                   type="checkbox"
                   :checked="
-                    optimizerStore.selectedKeys.includes(
+                    optimizerStore.selectedKeysSet.has(
                       `${utxo.txHash}#${utxo.index}`,
                     )
                   "
@@ -320,7 +320,7 @@ defineExpose({
             class="mobile-utxo-item p-4 border border-white/5 bg-white/[0.01] rounded-xl flex flex-col gap-2 transition-colors"
             :class="{
               'bg-violet-500/[0.025] !border-violet-500/20':
-                optimizerStore.selectedKeys.includes(
+                optimizerStore.selectedKeysSet.has(
                   `${utxo.txHash}#${utxo.index}`,
                 ),
               'cursor-pointer': !isConsolidating,
@@ -345,7 +345,7 @@ defineExpose({
                 <input
                   type="checkbox"
                   :checked="
-                    optimizerStore.selectedKeys.includes(
+                    optimizerStore.selectedKeysSet.has(
                       `${utxo.txHash}#${utxo.index}`,
                     )
                   "

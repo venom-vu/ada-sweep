@@ -25,6 +25,10 @@ FR7: UTXO scanning fallback (Mainnet-only) — check pool script addresses via B
 FR8: Phishing URL detection pipeline — shield metadata URLs, block image rendering
 FR9: Whitelist override persist — localStorage key `adasweep-whitelist-overrides-{network}`
 FR10: Whitelist phân tách theo network — mỗi network có key riêng
+FR11: Data Sign page inputs — plain text input with real-time hex encoding display
+FR12: CIP-30 signData integration — Eternl-only connector gating, COSE Sign1/Key output with copy functionality
+FR13: CBOR Deserialization Parser — dynamic WASM-only sequence to identify and parse Transaction, UTXO, Address, Value
+FR14: Deserialization Views — interactive JSON tree view and graphic Block views for Cardano structures
 
 ### Non-Functional Requirements
 
@@ -52,6 +56,8 @@ AR7: `<ClientOnly>` wrapping cho mọi WASM/CIP-30 code
 AR8: Vite optimizeDeps exclude `@hydra-sdk/cardano-wasm`
 AR9: Co-located Vitest spec files tại `app/utils/__tests__/`, `app/services/dex/__tests__/`
 AR10: Phishing URL shielding — `v-if="!asset.phishingUrlShielded"` trong template
+AR11: WASM dynamic client imports — avoid SSR build issues by dynamically importing WASM inside client contexts
+AR12: Eternl wallet gating verification — check walletName state in wallet store before enabling CIP-30 operations
 
 ### UX Design Requirements
 
@@ -71,8 +77,14 @@ Không có UX document — bỏ qua.
 | FR8 (Phishing URL detection) | Epic 2 |
 | FR9 (Whitelist override persist) | Epic 2 |
 | FR10 (Whitelist per network) | Epic 2 |
+| FR11 (Data Sign page inputs) | Epic 3 |
+| FR12 (CIP-30 signData Eternl-only) | Epic 3 |
+| FR13 (CBOR Deserialization Parser) | Epic 3 |
+| FR14 (Deserialization Views) | Epic 3 |
 | AR1-AR9 (Architecture standards) | Epic 1 |
 | AR10 (Phishing URL shielding) | Epic 2 |
+| AR11 (WASM client-only dynamic imports) | Epic 3 |
+| AR12 (Eternl wallet gating) | Epic 3 |
 
 ## Epic List
 
@@ -421,4 +433,119 @@ So that **I can quickly correct misclassifications without leaving the page**.
 **Given** user click "Flag as Spam",
 **When** action hoàn tất,
 **Then** asset di chuyển từ Trusted sang Suspicious tab ngay lập tức.
+
+
+### Epic 3: Developer Tools
+Cung cấp các trang công cụ phát triển chạy 100% client-side để thực hiện ký dữ liệu thông điệp (chỉ hỗ trợ ví Eternl) và giải mã CBOR hex sang giao diện trực quan và cấu trúc JSON.
+**FRs covered:** FR11, FR12, FR13, FR14, AR11, AR12
+**NFRs covered:** NFR6, NFR7, NFR10, SM-4, SM-3
+
+#### Story 3.1: cborDecoder.ts — CBOR sequential decoding helper
+As a **developer**,
+I want **a unified CBOR decoding helper utility**,
+So that **I can decode hex strings into common Cardano entities sequentially using only @hydra-sdk/cardano-wasm**.
+
+**Acceptance Criteria:**
+
+**Given** một chuỗi Hex CBOR hợp lệ,
+**When** `decodeCardanoCbor(hexString)` được gọi,
+**Then** nó chuyển đổi Hex sang `Uint8Array` và thử giải mã tuần tự qua các lớp của WASM SDK.
+
+**Given** chuỗi CBOR của một Transaction,
+**When** giải mã,
+**Then** `CardanoWASM.Transaction.from_bytes()` thành công trước, hàm trả về đối tượng có `{ type: 'Transaction', data: JSON_friendly_structure }`.
+
+**Given** chuỗi CBOR của một UTXO,
+**When** giải mã,
+**Then** `CardanoWASM.TransactionUnspentOutput.from_bytes()` thành công trước, hàm trả về đối tượng có `{ type: 'UTXO', data: JSON_friendly_structure }`.
+
+**Given** chuỗi CBOR của một Address,
+**When** giải mã,
+**Then** `CardanoWASM.Address.from_bytes()` thành công trước, hàm trả về đối tượng có `{ type: 'Address', data: JSON_friendly_structure }`.
+
+**Given** chuỗi CBOR của một Value,
+**When** giải mã,
+**Then** `CardanoWASM.Value.from_bytes()` thành công trước, hàm trả về đối tượng có `{ type: 'Value', data: JSON_friendly_structure }`.
+
+**Given** chuỗi CBOR không hợp lệ hoặc thực thể không được hỗ trợ,
+**When** giải mã thất bại ở tất cả các lớp,
+**Then** ném ra lỗi hoặc trả về đối tượng lỗi có thông báo tường minh mà không làm sập ứng dụng.
+
+#### Story 3.2: sign.vue — Data signing page (Eternl-only)
+As a **developer using Eternl wallet**,
+I want **to sign a plain text message using CIP-30 signData API**,
+So that **I can prove my address ownership quickly in the browser**.
+
+**Acceptance Criteria:**
+
+**Given** trang `app/pages/sign.vue`,
+**When** truy cập,
+**Then** giao diện hiển thị ô textarea nhập Plain text và ô hiển thị mã Hex tương ứng (read-only).
+
+**Given** người dùng gõ văn bản thuần túy,
+**When** nội dung thay đổi,
+**Then** mã Hex hiển thị được cập nhật tương ứng theo thời gian thực (mã hóa UTF-8 bytes to Hex).
+
+**Given** trạng thái kết nối ví hiện tại,
+**When** ví kết nối không phải là `'eternl'` hoặc chưa kết nối ví,
+**Then** nút "Sign" bị vô hiệu hóa (disabled) và hiển thị cảnh báo: "Chức năng ký dữ liệu hiện tại chỉ hỗ trợ ví Eternl. Vui lòng kết nối ví Eternl."
+
+**Given** ví kết nối là `'eternl'`,
+**When** người dùng click nút "Sign",
+**Then** hệ thống gọi API ví `walletApi.getChangeAddress()` để lấy địa chỉ dạng Hex, sau đó gọi `walletApi.signData(changeAddressHex, payloadHex)`.
+
+**Given** ví trả về kết quả ký thành công,
+**When** xử lý response,
+**Then** hiển thị hai chuỗi Hex kết quả: `signature` (COSE Sign1) và `key` (COSE Key) dạng Hex kèm theo nút copy nhanh.
+
+**Given** người dùng từ chối ký hoặc ví gặp lỗi,
+**When** catch error,
+**Then** hiển thị thông báo lỗi thân thiện dưới dạng alert của UI, không gây crash ứng dụng.
+
+**Given** trang `app/pages/sign.vue`,
+**When** khởi tạo hoặc build,
+**Then** mã nguồn được bọc hoàn toàn trong `<ClientOnly>` và các hàm WASM/Wallet API được bảo vệ để SSR-safe.
+
+#### Story 3.3: cbor.vue — CBOR deserializer page
+As a **developer**,
+I want **to paste a CBOR Hex string and see its decoded contents in JSON or graphic Block layouts**,
+So that **I can visually inspect Cardano entities without external tools**.
+
+**Acceptance Criteria:**
+
+**Given** trang `app/pages/cbor.vue`,
+**When** truy cập,
+**Then** giao diện hiển thị ô textarea để dán chuỗi CBOR Hex và nút "Deserialize".
+
+**Given** dán một chuỗi CBOR Hex,
+**When** click "Deserialize",
+**Then** gọi helper `decodeCardanoCbor` để giải mã. Nếu lỗi, hiển thị thông điệp cảnh báo lỗi: "Không thể giải mã CBOR này thành thực thể Cardano hợp lệ".
+
+**Given** giải mã thành công một thực thể,
+**When** render kết quả,
+**Then** hiển thị hai tab chọn: "JSON View" và "Block View".
+
+**Given** tab "JSON View" được chọn,
+**When** render,
+**Then** hiển thị cấu trúc JSON đầy đủ của thực thể dưới dạng cây (thụt lề, tô màu cú pháp hoặc định dạng dễ đọc).
+
+**Given** tab "Block View" và thực thể nhận diện là `Transaction`,
+**When** render,
+**Then** hiển thị khối đồ họa gồm: danh sách Inputs (TxHash và Index), Outputs (Địa chỉ dạng Bech32, số lượng ADA và danh sách các token kèm Policy ID/Asset Name), cùng với mức Fee giao dịch (Loveland/ADA).
+
+**Given** tab "Block View" và thực thể nhận diện là `UTXO`,
+**When** render,
+**Then** hiển thị khối đồ họa tách biệt phần Input (TxHash, Index) và phần Output (Địa chỉ Bech32, ADA, Tokens).
+
+**Given** tab "Block View" và thực thể nhận diện là `Address`,
+**When** render,
+**Then** hiển thị địa chỉ dạng Bech32 và Network ID nhận dạng được (Preprod/Mainnet).
+
+**Given** tab "Block View" và thực thể nhận diện là `Value`,
+**When** render,
+**Then** hiển thị tổng Lovelace/ADA và danh sách các token (Policy ID, Asset Name, số lượng).
+
+**Given** trang `app/pages/cbor.vue`,
+**When** khởi tạo,
+**Then** mã nguồn được bọc hoàn toàn trong `<ClientOnly>` và các dynamic import WASM được áp dụng để đảm bảo an toàn SSR.
 

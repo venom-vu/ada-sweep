@@ -19,27 +19,33 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - **FR-3 (Smart/Manual UTXO Consolidation):** Cung cấp chế độ gom bụi tự động (Smart) và gom tick chọn thủ công (Manual). Tích hợp cảnh báo hiệu quả kinh tế khi tỷ lệ Phí giao dịch / ADA thu hồi > 30%.
 - **FR-4 (Transaction Batching):** Tự động phân tách và chia nhỏ hàng trăm UTXO cần gom thành các lô giao dịch tối ưu dưới giới hạn kích thước 16KB của Cardano.
 - **FR-5 (Spam Consolidation vs. Full Burn):** Mặc định gom tất cả token rác được chọn vào một UTXO duy nhất để cách ly ("Isolated Junk Box") giải phóng 90%+ ADA bị khóa. Tùy chọn nâng cao gửi UTXO rác này đến địa chỉ chết ("Full Burn") hy sinh lượng min-ADA tối thiểu còn lại.
+- **FR-8 (Data Sign Page - Eternl only):** Cho phép nhập văn bản thuần, tự động đổi sang Hex, kết nối và gọi API `signData` của ví Eternl để ký dữ liệu, hiển thị signature (COSE Sign1) và key (COSE Key) dạng Hex.
+- **FR-9 (CBOR Deserialization Page):** Cho phép nhập chuỗi CBOR Hex, cố gắng giải mã sang 4 thực thể Cardano thông dụng (Transaction, UTXO, Address, Value) sử dụng bộ công cụ `@hydra-sdk`, hiển thị cấu trúc qua JSON View và Block View trực quan.
 
 **Non-Functional Requirements:**
 - **Non-Custodial Security:** An toàn tuyệt đối, dApp không giữ private key, mọi giao dịch phải được ký bởi người dùng qua ví CIP-30.
-- **Client-Side Heavy Architecture:** Toàn bộ việc xử lý UTXO, tính toán min-ADA, và build transaction được thực hiện trên client-side để đảm bảo quyền riêng tư và tốc độ.
+- **Client-Side Heavy Architecture:** Toàn bộ việc xử lý UTXO, tính toán min-ADA, build transaction, và giải mã CBOR được thực hiện trên client-side để đảm bảo quyền riêng tư và tốc độ.
 - **Performance & Responsiveness:** Thời gian quét ví và tải dữ liệu thanh khoản từ DEX API dưới 3 giây. Hỗ trợ giao diện responsive Dark Mode cao cấp.
 - **Strict Size Constraint Compliance:** Đảm bảo 100% các giao dịch build ra đều hợp lệ về kích thước (<16KB) và đủ min-ADA yêu cầu để tránh lỗi node từ chối.
+- **Robust CBOR Parsing Error Handling:** Quá trình giải mã CBOR lỗi không được gây crash giao diện (UI) của ứng dụng; hệ thống phải hiển thị thông báo lỗi tường minh.
 
 **Scale & Complexity:**
 - Primary domain: Web-based Cardano Frontend dApp
-- Complexity level: Medium (phụ thuộc vào thuật toán Cardano Transaction Building & Batching)
-- Estimated architectural components: 4 core client-side components:
+- Complexity level: Medium (phụ thuộc vào thuật toán Cardano Transaction Building & Batching, tích hợp CIP-30 signData và WASM CBOR decoding)
+- Estimated architectural components: 6 core client-side components:
   1. Wallet Provider & Connection Manager (CIP-30)
   2. UTXO Analyzer & Spam Classifier Engine (DEX API, LocalStorage)
   3. Transaction Builder & Fee/Min-ADA Estimator
   4. Tx Batching & Serialization Manager (Cardano SDK)
+  5. Data Signing Handler (Eternl-only `signData` integration)
+  6. CBOR Decoder Engine (WASM-based Cardano deserializer)
 
 ### Technical Constraints & Dependencies
 - **Cardano Ledger Constraints:** Giới hạn kích thước transaction tối đa ~16.384 bytes; công thức tính min-ADA động (Babbage/Conway eras).
 - **CIP-30 Wallet Protocol:** Phụ thuộc vào việc các ví extension/mobile cài đặt đúng chuẩn CIP-30, trả về UTXO HEX mã hóa theo CBOR.
 - **External DEX Aggregator API:** Phụ thuộc vào tính ổn định và tốc độ của API ngoài (như Minswap API) để quét pool thanh khoản của token.
 - **Client Sandbox Limitation:** local storage của trình duyệt dùng để lưu cấu hình Whitelist ghi đè (Mark as Trusted) sẽ bị mất nếu người dùng xóa cache trình duyệt.
+- **Hydra SDK Dependency Constraints:** Mọi thao tác ký dữ liệu và giải mã CBOR bắt buộc sử dụng bộ thư viện `@hydra-sdk` sẵn có (`@hydra-sdk/cardano-wasm` và `@hydra-sdk/core`). Nghiêm cấm cài đặt các gói giải mã CBOR của bên thứ ba khác.
 
 ### Cross-Cutting Concerns Identified
 - **Wallet Connection State Persistence:** Trạng thái kết nối ví của người dùng phải được duy trì mượt mà giữa các trang và tự động khôi phục khi reload.
@@ -50,6 +56,8 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - **DEX Service Lifecycle:** Component mount trước khi DexService init → crash. Giải pháp: `watch(selectedNetwork)` + `await` service factory trước khi component render.
 - **Classification UI States:** Store cần expose `classificationStatus` map per token và global `dexStatus` (idle/loading/dexlive/fallback/error) để component render đúng trạng thái UI — spinner, badge xanh/dẻ/red, và warning banner.
 - **DEX Status Indicator:** UI cần badge nhỏ "🔍 DEX: Online" hoặc "🔍 Local: Limited" để user biết mức độ tin cậy của kết quả phân loại.
+- **WASM/SSR Safety for Dev Pages:** Kể cả khi SSR tắt, mọi file Vue sử dụng thư viện Cardano WASM cho trang Ký dữ liệu và Giải mã CBOR đều phải tuân thủ việc bọc trong `<ClientOnly>` và import dynamic để tránh các vấn đề tương thích môi trường.
+- **Eternl Wallet Gating:** Chức năng Ký dữ liệu phải kiểm tra ví kết nối hiện tại (`walletStore.walletName === 'eternl'`). Nếu không khớp, khóa tương tác và hiển thị thông báo hướng dẫn.
 
 ## Starter Template Evaluation
 
@@ -115,6 +123,7 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 **Critical Decisions (Block Implementation):**
 - **Cardano Node Connection & Transaction building:** Using **Hydra SDK** (`@hydra-sdk/core` & `@hydra-sdk/cardano-wasm`) for building, serialization, and wallet interactions.
 - **Framework & SSR Safety:** Wrapping all reactive Web3 logic in Nuxt `<ClientOnly>` templates to completely prevent SSR mismatches and server-side node WASM loading crashes.
+- **Cardano WASM Deserialization Engine:** Sử dụng `@hydra-sdk/cardano-wasm` làm công cụ độc quyền để giải mã CBOR hex phía client cho 4 thực thể thông dụng (Transaction, UTXO, Address, Value).
 
 **Important Decisions (Shape Architecture):**
 - **Frontend State Management:** Using **Pinia (v2.2.0)** to build reactive global stores (`wallet.ts`, `optimizer.ts`, `cleaner.ts`) for consistent state management across different views.
@@ -123,10 +132,14 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 - **Protocol Parameters:** Fetch từ Blockfrost `/epochs/latest/parameters` qua utility `app/utils/protocolParams.ts`, không hardcode trong component.
 - **Network State:** Wallet store `selectedNetwork` làm nguồn truth duy nhất. Liquidity cache keyed by network ID để tránh stale data khi switch network.
 - **Junk Overrides Database:** Using **Browser LocalStorage** for saving custom whitelists and "Mark as Trusted" user overrides locally. Keyed by network: `adasweep-whitelist-overrides-{network}` (ví dụ `adasweep-whitelist-overrides-preprod`, `adasweep-whitelist-overrides-mainnet`).
+- **Developer Tools Pages Routing:** Thêm 2 trang `app/pages/sign.vue` (Ký dữ liệu) và `app/pages/cbor.vue` (Giải mã CBOR) dựa trên File-system Routing của Nuxt 4.
+- **Eternl-only Data Signing:** Giới hạn tính năng Ký dữ liệu chỉ hỗ trợ duy nhất ví kết nối Eternl (`walletStore.walletName === 'eternl'`).
+- **Sequential CBOR Parsing:** Thử nghiệm giải mã tuần tự qua 4 hàm giải mã của WASM SDK. Nếu tất cả đều lỗi, báo lỗi về UI mà không dùng thêm thư viện bên ngoài.
 
 **Deferred Decisions (Post-MVP):**
 - **Community Spam Reporting Backend:** Postponed to later phases to avoid database and API hosting complexity in v1.
 - **Layer 2 Hydra Head Operations:** Integration of L2 atomic swaps or Hydra head operations is deferred to Phase 4.
+- **Support for Other Wallets in signData:** Hoãn việc hỗ trợ các ví khác ngoài Eternl cho đến v2.
 
 ### Data Architecture
 - **Blockchain Data Retrieval:** Direct connection to the Cardano ledger via **Blockfrost API** using the Hydra SDK Blockfrost Provider instance.
@@ -134,6 +147,7 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 
 ### Authentication & Security
 - **Authentication:** Standard Cardano CIP-30 signature verification (non-custodial session). Users interact only via browser wallets (Eternl, Vespr, Nami, Flint, Lace).
+- **Data Signing:** Tích hợp gọi chuẩn `signData` CIP-30 với địa chỉ change address dạng hex thu được trực tiếp từ ví. Không lưu khóa riêng của người dùng.
 - **Phishing Prevention:** Heavy sandbox shielding of Suspicious assets. Any media or external resource URL in Suspicious NFT metadata is dynamically stripped from the DOM; only plain text token titles and warning SVGs are rendered.
 
 ### API & Communication Patterns
@@ -142,11 +156,19 @@ npm install @hydra-sdk/core @hydra-sdk/cardano-wasm
 - **Blockfrost Querying:** Secured HTTPS communications between browser client and Blockfrost nodes, utilizing API keys configured in standard Nuxt runtime configurations (.env). Dùng cho cả UTXO query lẫn protocol params fetch.
 - **Protocol Params Fetch:** `GET /epochs/latest/parameters` via Blockfrost, map response sang `Protocol` type từ `@hydra-sdk/core`. Cache trong memory (`Map<networkKey, {params, fetchedAt}>`) với TTL 1 epoch (~5 ngày). Keyed by network ID để tránh cross-network stale data.
 - **Network Switch:** `walletStore.selectedNetwork` watch → `cleanerStore` clear liquidity cache → re-fetch với service mới. Dùng `AbortController` để cancel pending request khi switch nhanh liên tiếp.
+- **CIP-30 signData Integration:** Sử dụng địa chỉ nhận từ ví qua `walletApi.getChangeAddress()` để gọi `walletApi.signData(addr, payloadHex)`. Payload văn bản thuần được chuyển đổi sang Hex qua Web API `TextEncoder`.
+- **WASM Deserialization Flow:** CBOR Hex đầu vào được chuyển sang byte array (`Uint8Array`) và chạy tuần tự qua:
+  1. `CardanoWASM.Transaction.from_bytes(bytes)`
+  2. `CardanoWASM.TransactionUnspentOutput.from_bytes(bytes)`
+  3. `CardanoWASM.Address.from_bytes(bytes)`
+  4. `CardanoWASM.Value.from_bytes(bytes)`
+  Bất kỳ kết quả thành công nào sẽ được chuyển đổi qua JSON để phục vụ hiển thị.
 
 ### Frontend Architecture
 - **Framework Stack:** **Nuxt 4 + Vue 3 + TypeScript**.
 - **State Management:** **Pinia Store** to centralize CIP-30 instances, active UTXO arrays, health scores, and optimizer batches.
 - **Styling system:** Strict Vanilla CSS. Modular layout design with component-level isolation and standard CSS variables for color tokens (Harmonious Dark/Light themes).
+- **Deserializer Views:** Quản lý tab hiển thị (`JSON` vs `Block`) và sử dụng các layout để biểu diễn đồ họa trực quan cho các thực thể.
 
 ### Infrastructure & Deployment
 - **Hosting Solution:** **Vercel or Netlify** static client build deployment. Zero backend requirement ensures robust scaling, cheap operational cost, and high security.
@@ -307,6 +329,9 @@ export interface AssetClassification {
 - *Anti-Pattern:* Không abort request cũ khi switch network. (Race condition → stale data overwrite kết quả mới).
 - *Anti-Pattern:* `throw raw Error` từ DexService. (Phải dùng `DexServiceError` type để store handle đúng).
 - *Anti-Pattern:* Gọi DEX API trên Preprod. (Preprod dùng heuristic local — không cần, không nên gọi API ngoài).
+- *Anti-Pattern:* Import các module WASM ở top-level của file components/pages Vue. (Gây lỗi biên dịch hoặc crash do Nuxt rendering. Bắt buộc import động qua `await import` và bọc trong `<ClientOnly>`).
+- *Anti-Pattern:* Cài đặt thêm các gói thư viện giải mã CBOR bên thứ ba (như `cbor`, `cborg`). (Vi phạm ràng buộc phụ thuộc. Chỉ sử dụng gói `@hydra-sdk/cardano-wasm` đã cài sẵn).
+- *Anti-Pattern:* Cho phép gọi hàm ký dữ liệu trên các ví không hỗ trợ. (Phải kiểm tra điều kiện ví kết nối là Eternl và khóa hành động nếu không hợp lệ).
 
 ## Project Structure & Boundaries
 
@@ -342,7 +367,9 @@ clean-cardano-wallet/
 │   ├── pages/
 │   │   ├── index.vue
 │   │   ├── optimizer.vue
-│   │   └── cleaner.vue
+│   │   ├── cleaner.vue
+│   │   ├── sign.vue               (NEW: Data signing tool)
+│   │   └── cbor.vue               (NEW: CBOR deserializer tool)
 │   ├── stores/
 │   │   ├── wallet.ts
 │   │   ├── optimizer.ts
@@ -352,6 +379,7 @@ clean-cardano-wallet/
 │       ├── minAdaCalculator.ts
 │       ├── protocolParams.ts
 │       ├── transactionBatcher.ts
+│       ├── cborDecoder.ts         (NEW: CBOR sequential decoding utility)
 │       └── __tests__/
 │           └── dexService.spec.ts
 ```
@@ -372,73 +400,46 @@ clean-cardano-wallet/
 
 - **FR-1 (DexService — Mainnet):** `app/services/dex/MinswapService.ts` (Minswap Aggregator API).
 - **FR-2 (DexService — Preprod):** `app/services/dex/HeuristicService.ts` (local whitelist + name pattern).
-- **FR-3 (Network-aware classification pipeline):** `app/stores/cleaner.ts` (6-step pipeline: whitelist → blacklist → system whitelist → name pattern → DEX → fallback), `app/services/dex/index.ts` (factory).
-- **FR-4 (Protocol params fetch):** `app/utils/protocolParams.ts` (Blockfrost `/epochs/latest/parameters`).
-- **FR-5 (Phishing URL Shielding):** `app/components/JunkDetector.vue` (template: `v-if="!asset.phishingUrlShielded"`), `app/stores/cleaner.ts` (flag computation).
-- **FR-6 (User Whitelist Management):** `app/composables/useLocalStorage.ts` (key per network: `adasweep-whitelist-overrides-{network}`), `app/stores/cleaner.ts` (markAsTrusted / markAsSuspicious actions).
-- **FR-7 (Network switch re-classify):** `app/stores/wallet.ts` (selectedNetwork), `app/stores/cleaner.ts` (watch + AbortController + cache clear).
-- **Wallet Analysis & Health Score:** `app/stores/wallet.ts`, `app/components/WalletHealth.vue`.
-- **UTXO Consolidation & Batching:** `app/stores/optimizer.ts`, `app/utils/transactionBatcher.ts`.
+- **FR-3 (Network-aware classification pipeline):** `app/stores/cleaner.ts` (6-step pipeline: whitelist → blacklist → system### Requirements Coverage Validation ✅
 
-**Note:** Classification Engine scope covers FR-1 to FR-7. Consolidate/burn features (old FR-3 to FR-5) là scope riêng, không thuộc PRD hiện tại.
+**Epic/Feature Coverage:**
+- Tất cả các Epic và tính năng đều được hỗ trợ đầy đủ qua cấu trúc thư mục, composables và stores.
 
-## Architecture Validation Results
-
-### Coherence Validation ✅
-
-**Decision Compatibility:**
-- Nuxt 4 + Vue 3 + TypeScript + Hydra SDK + Blockfrost — tương thích hoàn toàn.
-- `DexService` abstraction + Pinia stores — service layer độc lập, không xung đột với store pattern.
-- `MinswapService` (Mainnet) + `HeuristicService` (Preprod) — cùng interface, khác implementation, plug-and-play qua factory.
-- `AbortController` pattern + cache keyed by network ID — race condition handling đồng bộ với store watch.
-
-**Pattern Consistency:**
-- Setup Store syntax nhất quán xuyên suốt (`wallet.ts`, `cleaner.ts`, `optimizer.ts`).
-- Naming: PascalCase components, camelCase stores/utils/services, `policyId.assetNameHex` asset format.
-- Anti-patterns mới (DEX logic trong store, raw Error throw) bổ sung để tránh implementation drift.
-
-**Structure Alignment:**
-- `app/services/dex/` là physical boundary rõ ràng cho DEX logic — không lẫn với store hay composable.
-- `app/utils/protocolParams.ts` là pure utility, không lifecycle — đúng vị trí.
-
-### Requirements Coverage Validation ✅
-
-**Functional Requirements Coverage (PRD 06/05):**
-- **FR-1 (DexService Mainnet):** `app/services/dex/MinswapService.ts` ✅
-- **FR-2 (DexService Preprod):** `app/services/dex/HeuristicService.ts` ✅
-- **FR-3 (Classification pipeline):** `app/stores/cleaner.ts` + `app/services/dex/index.ts` ✅
-- **FR-4 (Protocol params fetch):** `app/utils/protocolParams.ts` ✅
-- **FR-5 (Phishing shielding):** `app/components/JunkDetector.vue` + `cleaner.ts` ✅
-- **FR-6 (User whitelist):** `app/composables/useLocalStorage.ts` + `cleaner.ts` ✅
-- **FR-7 (Network switch re-classify):** `wallet.ts` + `cleaner.ts` (watch + AbortController) ✅
+**Functional Requirements Coverage:**
+- **FR-1 (Wallet Analysis & Health Score):** `app/stores/wallet.ts` + `app/components/WalletHealth.vue` ✅
+- **FR-2 (Spam Detection & Media Shielding):** `app/stores/cleaner.ts` + `app/components/JunkDetector.vue` ✅
+- **FR-3 (Smart/Manual UTXO Consolidation):** `app/stores/optimizer.ts` + `app/components/OptimizerControls.vue` ✅
+- **FR-4 (Transaction Batching):** `app/utils/transactionBatcher.ts` ✅
+- **FR-5 (Spam Consolidation vs. Full Burn):** `app/components/JunkBurner.vue` ✅
+- **FR-8 (Data Sign Page - Eternl only):** `app/pages/sign.vue`, tương tác trực tiếp qua `walletStore.walletApi.signData` ✅
+- **FR-9 (CBOR Deserialization Page):** `app/pages/cbor.vue` + `app/utils/cborDecoder.ts` gọi `@hydra-sdk/cardano-wasm` ✅
 
 **Non-Functional Requirements Coverage:**
 - **Cross-network:** DexService factory pattern + cache keyed by network ID.
 - **Phishing Prevention:** `phishingUrlShielded` flag trong `AssetClassification`, template `v-if` block.
 - **Zero API call on Preprod:** `HeuristicService` không fetch HTTP.
 - **Race condition safe:** `AbortController` + `isCurrentNetwork` flag.
+- **WASM Loading & SSR Safety:** Bọc trong `<ClientOnly>` ở các trang `sign.vue` và `cbor.vue`, sử dụng `await import` để ngăn lỗi SSR WASM.
+- **Robust CBOR Parsing Error Handling:** Toàn bộ logic giải mã CBOR được bọc trong các khối try-catch an toàn, phản hồi trực tiếp mã lỗi về UI.
 
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-- Tất cả critical decisions (DexService, protocol params, network switch, whitelist) đã document kèm rationale.
-- Party Mode insights integrated (edge cases, anti-patterns, test strategy, UI states).
+- Tất cả critical decisions (DexService, protocol params, cbor parsing, signData, whitelist overrides) đã được thiết lập.
 
 **Structure Completeness:**
-- Cây thư mục đã update với `app/services/dex/`, `app/utils/protocolParams.ts`, `app/utils/__tests__/`.
+- Cây thư mục đã được cấu trúc lại bổ sung `app/pages/sign.vue`, `app/pages/cbor.vue`, và `app/utils/cborDecoder.ts`.
 
 **Pattern Completeness:**
-11 anti-patterns explicitly listed. Naming/structure/format/process patterns defined. DexService interface convention added.
+- Các quy định import dynamic WASM và gating ví Eternl đã được thêm vào Anti-Patterns và Process Patterns.
 
 ### Gap Analysis Results
 
-**Important (minor):** ✅ Resolved (see key type definitions below)
-- ~~`DexServiceError` type chưa được định nghĩa~~ → Đã định nghĩa trong `DexService.ts` (xem Key Type Definitions).
-- ~~`ClassificationStatus` enum chưa được document~~ → Đã định nghĩa trong `cleaner.ts` (xem Key Type Definitions).
+**Important (minor):**
+- UI state binding matrix (store status → component render) chưa được document chi tiết — có thể bổ sung trong UX spec.
 
 **Nice-to-Have:**
-- UI state binding matrix (store status → component render) chưa được document chi tiết — có thể bổ sung trong UX spec.
-- ~~`protocolParams.ts` cần cache strategy document cụ thể~~ → Đã document: Map cache với TTL 1 epoch (~5 ngày), keyed by network ID (xem API & Communication Patterns).
+- Các helper chuyển đổi từ Cardano TransactionBody sang JSON chi tiết có thể được tối ưu hóa thêm khi viết mã nguồn.
 
 ### Architecture Completeness Checklist
 
@@ -469,11 +470,14 @@ clean-cardano-wallet/
 - DexService abstraction cho phép test dễ dàng (mock interface) + mở rộng DEX provider sau này.
 - Preprod zero external call — không phụ thuộc API khi dev/test.
 - Network switch handle race condition ngay từ architecture (AbortController + cache key).
-- UI states exposure cho phép UX render chính xác 4 trạng thái.
+- UI states exposure cho phép UX render chính xác các trạng thái phân loại.
+- Phân tách rõ ràng giao diện trang Ký và Giải mã CBOR, đóng gói các logic xử lý CBOR tuần tự vào utility chuyên biệt để tăng khả năng kiểm thử.
+- Đảm bảo an toàn SSR WASM ngay từ khâu thiết kế.
 
 **Areas for Future Enhancement:**
 - UI state binding matrix (store status → component render) — chi tiết hóa trong UX spec.
 - `DexServiceError` và `ClassificationStatus` — đã định nghĩa, cần verify khi implement.
+- UX layout tối ưu hóa các đối tượng TransactionBody phức tạp.
 
 ### Implementation Handoff
 
@@ -484,6 +488,9 @@ clean-cardano-wallet/
 - Network switch: `AbortController.abort()` request cũ trước khi fetch mới.
 - Preprod: `createDexService('preprod')` trả về HeuristicService — không gọi HTTP.
 - Test: Unit test DexService với mock fetch; integration test Preprod heuristic không cần mock.
+- Ký dữ liệu và giải mã CBOR bắt buộc dùng `@hydra-sdk/cardano-wasm` và `@hydra-sdk/core`.
+- Luôn bọc mã nguồn xử lý ví/WASM trong `<ClientOnly>` và import dynamic.
+- Chỉ kích hoạt tính năng ký khi kết nối ví Eternl.
 
 **First Implementation Priority (updated):**
 1. `app/services/dex/DexService.ts` — interface + types
@@ -492,3 +499,7 @@ clean-cardano-wallet/
 4. `app/services/dex/index.ts` — factory function
 5. Update `app/stores/cleaner.ts` — network-aware fetch + classificationStatus
 6. `app/services/dex/MinswapService.ts` — Mainnet implementation (cần test với API key thật)
+7. `app/utils/cborDecoder.ts` — CBOR sequential decoding helper (FR-13)
+8. `app/pages/sign.vue` — Data signing page (Eternl-only, FR-11, FR-12)
+9. `app/pages/cbor.vue` — CBOR deserialization page (FR-13, FR-14)
+

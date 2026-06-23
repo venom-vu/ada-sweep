@@ -113,8 +113,8 @@ const cardanoscanUrl = computed(() => {
         </button>
       </div>
 
-      <!-- SUBMITTED / CONFIRMING: Show tx hash + waiting on-chain -->
-      <div v-else-if="optimizerStore.batchStatus === 'submitted' || optimizerStore.batchStatus === 'confirming'" class="flex flex-col gap-3">
+      <!-- SUBMITTED: Show tx hash + submitting -->
+      <div v-else-if="optimizerStore.batchStatus === 'submitted'" class="flex flex-col gap-3">
         <div v-if="optimizerStore.latestTxHash" class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08]">
           <span class="text-xs font-semibold text-slate-400">Tx Hash:</span>
           <a
@@ -133,7 +133,7 @@ const cardanoscanUrl = computed(() => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          Confirming on-chain...
+          Submitting to network...
         </button>
       </div>
 

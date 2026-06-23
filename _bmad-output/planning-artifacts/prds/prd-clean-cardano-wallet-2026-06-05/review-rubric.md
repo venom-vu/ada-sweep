@@ -1,68 +1,74 @@
-# PRD Quality Review — ADASweep Multi-Network DEX-Powered Asset Classification Engine
+# PRD Quality Review — ADASweep Multi-Network DEX-Powered Asset Classification Engine & Developer Tools
 
 ## Overall verdict
 
-Strong, well-structured PRD with clear decisions, honest scoping, and testable FRs. The downstream architecture workflow validated it as "ready for implementation" — the core decisions held up. Two clusters of gaps emerged during architecture that the PRD should reflect if it feeds implementation: (1) UTXO scanning fallback (FR-7) was removed in architecture in favor of pure heuristic fallback, and (2) technical refinements (DexServiceError type, ClassificationStatus enum, AbortController race-condition handling, 15s fetch timeout) are missing. These are alignment gaps, not structural flaws — the PRD was final before architecture.
+Bản PRD được cập nhật đầy đủ và có cấu trúc chặt chẽ. Việc tích hợp hai tính năng bổ trợ mới (Sign Data & CBOR Deserializer) được thực hiện một cách nhất quán, có sự phân chia rõ ràng về User Journeys mới, Glossary và Functional Requirements tương ứng. Các ràng buộc về kỹ thuật (ví Eternl-only, chỉ sử dụng `@hydra-sdk` và chỉ hỗ trợ 4 thực thể thông dụng) đã được ghi nhận đầy đủ, loại bỏ các mơ hồ thiết kế trước khi đưa vào các bước thiết kế UI/UX hay xây dựng câu chuyện triển khai.
 
 ## Decision-readiness — Strong
 
-Decisions are stated clearly (FR-1: DexService abstraction, FR-5: Minswap Aggregator, FR-6: Preprod heuristic). Trade-offs are named — Mainnet vs Preprod strategies, global vs per-network whitelist. Open Questions are genuinely open (rate limits, pool addresses). No smoothed-over ambiguities.
+Các quyết định thiết kế quan trọng cho hai chức năng mới được chỉ định rõ ràng:
+- Chức năng Ký dữ liệu chỉ hỗ trợ duy nhất ví Eternl (FR-12) để tránh việc dàn trải tài nguyên kiểm thử và luồng ký.
+- Chức năng giải mã CBOR chỉ hỗ trợ 4 thực thể Cardano thông dụng (FR-13), tránh việc mở rộng quá tải phạm vi giải mã cho generic CBOR.
+- Ràng buộc cứng về việc sử dụng độc quyền `@hydra-sdk` (không dùng thư viện ngoài).
+Các giả định về tính khả thi của hàm `signData` trong ví Eternl và tính hợp lệ của CBOR từ WASM được theo dõi qua thẻ `[ASSUMPTION]` trong Assumptions Index.
 
 ### Findings
-- **[low]** UTXO scanning fallback (§4.2 FR-7) — architecture decided to remove UTXO scanning in favor of heuristic fallback for Preprod. PRD still lists it. *Fix:* Remove FR-7 or re-scope to Mainnet-only.
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Substance over theater — Strong
 
-Vision is asset-specific, not generic ("Ví Cardano bị tấn công bởi spam token airdrop"). UJs have named protagonist (Venom) with concrete scenarios. No persona theater (1 protagonist, well-defined non-users). NFRs are product-specific ("<10s for ≤100 UTXOs"), not boilerplate. No innovation theater.
+- Hai User Journeys mới (`UJ-4` và `UJ-5`) đều có nhân vật cụ thể (Venom) với các bước hành động thực tế, không có hiện tượng viết đối tượng mơ hồ hay chung chung.
+- Tránh được "persona theater" nhờ tập trung vào đối tượng sử dụng rõ ràng là nhà phát triển Cardano (hoặc người dùng nâng cao).
+- Chỉ số thành công mới (SM-4) và các thước đo an toàn kỹ thuật (SM-3) được cá nhân hóa phù hợp với hai chức năng bổ sung.
 
 ### Findings
-*(none — dimension is strong)*
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Strategic coherence — Strong
 
-Clear thesis: "real DEX data > heuristic for classification" drives every feature. Feature priority follows from thesis (P0: DEX providers, P1: fallback, P2: UX polish). MVP scope is problem-solving shape with scope logic that matches. Counter-metric (SM-C1: rate-limit monitoring) shows honest thinking.
+- Việc bổ sung nhóm chức năng Developer Tools tăng tính nhất quán của bộ công cụ hỗ trợ ví Cardano (bên cạnh việc quét dọn thì ký và kiểm tra CBOR là các công vụ thiết yếu hàng ngày của dev).
+- Cả hai tính năng mới đều được xếp mức độ ưu tiên P0 trong MVP Scope (§6.1) cho thấy định hướng rõ ràng về mục tiêu bàn giao sản phẩm.
 
 ### Findings
-*(none — dimension is strong)*
+*(không có — chiều kích này đạt chất lượng tốt)*
 
-## Done-ness clarity — Adequate
+## Done-ness clarity — Strong
 
-Every FR has a "Consequences" block with testable conditions — strong pattern. SM-2 sets a clear 10s benchmark. But several technical details that architecture later needed to define aren't present:
-- No error type contract (DexServiceError) for FR-1
-- No classification status state machine (ClassificationStatus enum) for UI binding
-- No timeout for fetch (architecture added 15s)
-- No race-condition handling (architecture added AbortController)
-
-These don't break "done-ness" for a PM-level PRD but would need resolution before engineering.
+Các yêu cầu chức năng (FR-11 đến FR-14) có mức độ chi tiết cao và có khả năng kiểm thử (Acceptance Criteria) rõ ràng:
+- FR-11: Chuyển đổi Plain text $\rightarrow$ Hex hiển thị thời gian thực.
+- FR-12: Ràng buộc kiểm tra `walletName === 'eternl'`, gọi đúng API `signData` với đối số, trả về và cho phép copy `signature` (COSE Sign1 Hex) và `key` (COSE Key Hex).
+- FR-13: Quy định rõ thứ tự giải mã tuần tự qua 4 hàm WASM: Transaction $\rightarrow$ UTXO $\rightarrow$ Address $\rightarrow$ Value.
+- FR-14: Quy định rõ các thành phần giao diện cần hiển thị trên Block View (Inputs, Outputs, Fee, Mint).
 
 ### Findings
-- **[medium]** No error contract for DexService (§4.1 FR-1) — FR says "returns LiquidityResult | null" but doesn't specify error type. Architecture later added DexServiceError. *Fix:* Add error return type to DexService interface in FR-1.
-- **[medium]** UI states undefined (§4.5) — Pipeline shows 8 steps but doesn't define what UI shows during loading, on DEX failure, or on error. Architecture later added ClassificationStatus enum. *Fix:* Add status field to pipeline output.
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Scope honesty — Strong
 
-Non-Goals are explicit and non-obvious (no backend server, no IPFS, no TVL calc). Assumptions Index with 3 entries, cross-referenced inline. Open Questions listed with concrete unknowns (rate limits, pool addresses). FR-10 marked as `[ASSUMPTION]` with clear alternatives. The scope boundary (classification only, not consolidate/burn) is stated upfront.
+- Các trường hợp ngoại lệ (Non-Goals) được viết rất tường minh: Không hỗ trợ ví khác cho chức năng ký, không hỗ trợ định dạng CBOR khác, không submit giao dịch lên blockchain, không dùng thư viện ngoài.
+- Các open questions cũ đã được đóng hoàn toàn. Câu hỏi mở mới (§8.2) về việc tối ưu hóa giao diện Block View đối với các TransactionBody phức tạp được lưu ý rõ ràng.
 
 ### Findings
-*(none — dimension is strong)*
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Downstream usability — Strong
 
-Glossary present, FR/UJ/SM IDs contiguous. Architecture workflow was able to source-extract from this PRD cleanly — validated in practice. UJs have named protagonist. Cross-references use Glossary terms.
+- Các thuật ngữ mới (`Data Sign`, `COSE Sign1`, `CBOR Deserialization`) đã được định nghĩa chuẩn xác trong Glossary.
+- Mã định danh FR/UJ/SM được cập nhật tiếp nối và contiguous (`FR-11`, `FR-12`, `FR-13`, `FR-14`, `UJ-4`, `UJ-5`, `SM-4`).
+- Thẻ `[ASSUMPTION]` liên kết đầy đủ đến Assumptions Index ở cuối tài liệu.
 
 ### Findings
-- **[low]** `dexCheckFailed: true` flag (§4.1 FR-3) — not defined in Glossary. Architecture renamed to `dexSource` + `ClassificationStatus`. *Fix:* Add to Glossary or align with architecture naming.
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Shape fit — Strong
 
-Chain-top PRD (feeds UX → architecture → stories) with appropriate rigor. Consumer dApp with meaningful UX → UJs warranted and well-executed. MVP scope is problem-solving, not platform. No over-formalization — the detail level matches stakes.
+- Bản PRD được thiết kế phù hợp với đặc thù dự án dApp Cardano (chain-top). Mức độ chi tiết kỹ thuật cho hai trang dev tools được thể hiện đầy đủ, sẵn sàng cho các pha thiết kế UI/UX và lập kế hoạch Epic/Stories tiếp theo.
 
 ### Findings
-*(none — dimension is strong)*
+*(không có — chiều kích này đạt chất lượng tốt)*
 
 ## Mechanical notes
 
-- Glossary: `dexCheckFailed` flag mentioned in FR-3 not in Glossary.
-- FR-7 (UTXO scanning) was removed in architecture alignment — may become stale.
-- Assumptions Index complete and cross-referenced.
-- UJ protagonist consistent (Venom).
+- Thuật ngữ nhất quán trên toàn bộ tài liệu.
+- Mã định danh liên tục, không bị trùng lặp hoặc nhảy quãng.
+- Các liên kết Assumptions Index hoạt động chính xác.

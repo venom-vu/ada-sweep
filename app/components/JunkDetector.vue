@@ -18,6 +18,7 @@ const walletStore = useWalletStore();
 const activeTab = ref<"suspicious" | "trusted">("suspicious");
 
 const selectedJunk = computed(() => props.selectedJunk);
+const selectedJunkSet = computed(() => new Set(props.selectedJunk));
 
 const isPreprod = computed(() => walletStore.selectedNetwork === "preprod");
 const isCleaning = computed(() => cleanerStore.isExecuting);
@@ -27,10 +28,13 @@ const selectTab = (tab: "suspicious" | "trusted") => {
 };
 
 const toggleSelectJunk = (assetId: string) => {
-  const updated = props.selectedJunk.includes(assetId)
-    ? props.selectedJunk.filter((id) => id !== assetId)
-    : [...props.selectedJunk, assetId];
-  emit("update:selectedJunk", updated);
+  const set = new Set(props.selectedJunk);
+  if (set.has(assetId)) {
+    set.delete(assetId);
+  } else {
+    set.add(assetId);
+  }
+  emit("update:selectedJunk", Array.from(set));
 };
 
 const selectAllSpam = () => {
@@ -43,8 +47,9 @@ const selectAllSpam = () => {
 
 const handleMarkAsTrusted = (assetId: string) => {
   cleanerStore.markAsTrusted(assetId);
-  const updated = props.selectedJunk.filter((id) => id !== assetId);
-  emit("update:selectedJunk", updated);
+  const set = new Set(props.selectedJunk);
+  set.delete(assetId);
+  emit("update:selectedJunk", Array.from(set));
 };
 
 const handleMarkAsSuspicious = (assetId: string) => {
@@ -204,7 +209,7 @@ defineExpose({
                 :key="asset.assetId"
                 class="transition-colors duration-150 hover:bg-white/[0.02]"
                 :class="{
-                  'bg-violet-500/[0.025]': selectedJunk.includes(asset.assetId),
+                  'bg-violet-500/[0.025]': selectedJunkSet.has(asset.assetId),
                   'cursor-pointer': !isCleaning,
                   'opacity-60': isCleaning,
                 }"
@@ -213,7 +218,7 @@ defineExpose({
                 <td class="p-4" @click.stop>
                   <input
                     type="checkbox"
-                    :checked="selectedJunk.includes(asset.assetId)"
+                    :checked="selectedJunkSet.has(asset.assetId)"
                     :disabled="isCleaning"
                     @change="toggleSelectJunk(asset.assetId)"
                     class="checkbox-custom"
@@ -333,7 +338,7 @@ defineExpose({
             :key="asset.assetId"
             class="p-4 border border-white/5 bg-white/[0.01] rounded-xl flex flex-col gap-3 transition-colors"
             :class="{
-              'bg-rose-500/[0.015] border-rose-500/10': selectedJunk.includes(
+              'bg-rose-500/[0.015] border-rose-500/10': selectedJunkSet.has(
                 asset.assetId,
               ),
               'cursor-pointer': !isCleaning,
@@ -346,7 +351,7 @@ defineExpose({
                 <div @click.stop>
                   <input
                     type="checkbox"
-                    :checked="selectedJunk.includes(asset.assetId)"
+                    :checked="selectedJunkSet.has(asset.assetId)"
                     :disabled="isCleaning"
                     @change="toggleSelectJunk(asset.assetId)"
                     class="checkbox-custom"
