@@ -21,19 +21,16 @@ export default (defineNuxtConfig as any)({
         // Open Graph
         { property: 'og:site_name', content: 'ADASweep' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:url', content: siteUrl },
         { property: 'og:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
         { property: 'og:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
         { property: 'og:image', content: `${siteUrl}/og-image.webp` },
         // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:url', content: siteUrl },
         { name: 'twitter:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
         { name: 'twitter:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
         { name: 'twitter:image', content: `${siteUrl}/og-image.webp` }
       ],
       link: [
-        { rel: 'canonical', href: siteUrl },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon/favicon.ico' },
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon/favicon-96x96.png' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon/favicon.svg' },

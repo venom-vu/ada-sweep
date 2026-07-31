@@ -18,7 +18,13 @@ const ogImageUrl = `${url.origin}/og-image.webp`;
 useSeoMeta({
   ogImage: ogImageUrl,
   twitterImage: ogImageUrl,
-  ogUrl: url.href,
+  ogUrl: `${url.origin}${url.pathname}`,
+});
+
+useHead({
+  link: [
+    { rel: "canonical", href: `${url.origin}${url.pathname}` },
+  ],
 });
 </script>
 
