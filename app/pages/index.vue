@@ -436,7 +436,7 @@ useHead({
           <div class="space-y-4 flex-1">
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
               <h2 class="text-lg font-bold text-white font-sans">
-                Fully Non-Custodial & Auditable
+                Fully Non-Custodial &amp; Auditable
               </h2>
               <div class="flex flex-wrap items-center gap-2">
                 <span

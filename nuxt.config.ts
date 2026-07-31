@@ -66,7 +66,13 @@ export default (defineNuxtConfig as any)({
       topLevelAwait()
     ],
     optimizeDeps: {
-      exclude: ['@hydra-sdk/cardano-wasm']
+      exclude: ['@hydra-sdk/cardano-wasm'],
+      include: ['buffer']
+    },
+    resolve: {
+      alias: {
+        buffer: 'buffer'
+      }
     }
   }
 })

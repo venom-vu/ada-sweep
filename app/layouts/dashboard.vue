@@ -20,7 +20,7 @@ const pageTitle = computed(() => {
   if (route.path.startsWith("/dashboard")) {
     return "Dashboard";
   }
-  return "ADASweep Platform";
+  return "Key Generator";
 });
 </script>
 
@@ -52,9 +52,7 @@ const pageTitle = computed(() => {
       </header>
 
       <!-- Main Panel Wrapper -->
-      <main
-        class="relative flex-1 px-6 py-6 pb-10 sm:px-10 md:py-10 z-10"
-      >
+      <main class="relative flex-1 px-6 py-6 pb-10 sm:px-10 md:py-10 z-10">
         <!-- Decorative subtle background orb -->
         <div
           class="absolute top-[20%] right-[10%] w-[350px] h-[350px] rounded-full bg-violet-600/5 blur-[120px] pointer-events-none"

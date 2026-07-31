@@ -144,6 +144,31 @@
           </svg>
           <span>CBOR Deserializer</span>
         </NuxtLink>
+
+        <NuxtLink
+          to="/keygen"
+          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-slate-400 hover:text-white hover:bg-white/[0.03]"
+          active-class="!text-violet-400 !bg-violet-500/[0.04]"
+        >
+          <span
+            class="absolute left-0 w-0.5 h-0 rounded-full bg-violet-500 opacity-0 group-hover:opacity-50 transition-all duration-200 group-hover:h-5"
+            aria-hidden="true"
+          ></span>
+          <svg
+            class="w-5 h-5 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+            />
+          </svg>
+          <span>Key Generator</span>
+        </NuxtLink>
       </nav>
     </div>
 
