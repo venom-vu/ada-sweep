@@ -9,6 +9,13 @@ export default (defineNuxtConfig as any)({
   devtools: { enabled: false },
   ssr: false,
 
+  // Prerender all pages so Googlebot gets real HTML (not an empty SPA shell)
+  nitro: {
+    prerender: {
+      routes: ['/', '/cbor', '/sign', '/keygen', '/optimizer', '/cleaner', '/dashboard']
+    }
+  },
+
   app: {
     head: {
       title: 'ADASweep — One-Click Wallet Cleanup & Reclaim Trapped ADA for Cardano',

@@ -14,23 +14,9 @@
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
-    <!-- Dashboard -->
-    <url>
-        <loc>https://adasweep.xyz/dashboard</loc>
-        <lastmod>2026-06-24</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
     <!-- Optimizer -->
     <url>
         <loc>https://adasweep.xyz/optimizer</loc>
-        <lastmod>2026-06-24</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <!-- Cleaner -->
-    <url>
-        <loc>https://adasweep.xyz/cleaner</loc>
         <lastmod>2026-06-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>

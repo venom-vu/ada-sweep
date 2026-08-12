@@ -25,10 +25,8 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div
-    v-if="walletStore.isSessionChecked"
-    class="flex relative min-h-screen font-sans bg-fintech-black text-slate-100"
-  >
+  <!-- Layout always renders (SEO-safe). Wallet session check only controls interactive parts client-side. -->
+  <div class="flex relative min-h-screen font-sans bg-fintech-black text-slate-100">
     <!-- DESKTOP LEFT SIDEBAR -->
     <DashboardSidebar />
 
@@ -62,33 +60,36 @@ const pageTitle = computed(() => {
         ></div>
         <ClientOnly>
           <NetworkMismatchBanner />
+          <!-- Session check loading overlay (client-only, không ảnh hưởng SSR/prerender) -->
+          <Transition name="fade">
+            <div
+              v-if="!walletStore.isSessionChecked"
+              class="absolute inset-0 z-50 flex items-center justify-center bg-fintech-black/80 backdrop-blur-sm"
+            >
+              <svg
+                class="animate-spin h-8 w-8 text-violet-500"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            </div>
+          </Transition>
         </ClientOnly>
         <slot />
       </main>
     </div>
-  </div>
-  <div
-    v-else
-    class="flex items-center justify-center min-h-screen bg-fintech-black"
-  >
-    <svg
-      class="animate-spin h-8 w-8 text-violet-500"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        class="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        stroke-width="4"
-      />
-      <path
-        class="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
   </div>
 </template>
