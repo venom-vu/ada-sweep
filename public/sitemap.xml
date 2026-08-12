@@ -3,36 +3,43 @@
     <!-- Home Page -->
     <url>
         <loc>https://adasweep.xyz/</loc>
-        <lastmod>2026-06-24</lastmod>
+        <lastmod>2026-08-12</lastmod>
         <changefreq>monthly</changefreq>
         <priority>1.0</priority>
     </url>
-    <!-- CBOR Deserializer -->
+    <!-- Wallet Cleaner -->
     <url>
-        <loc>https://adasweep.xyz/cbor</loc>
-        <lastmod>2026-06-24</lastmod>
+        <loc>https://adasweep.xyz/cleaner</loc>
+        <lastmod>2026-08-12</lastmod>
         <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
+        <priority>0.9</priority>
     </url>
-    <!-- Optimizer -->
+    <!-- UTXO Optimizer -->
     <url>
         <loc>https://adasweep.xyz/optimizer</loc>
-        <lastmod>2026-06-24</lastmod>
+        <lastmod>2026-08-12</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
-    <!-- Sign Data -->
+    <!-- CBOR Decoder -->
     <url>
-        <loc>https://adasweep.xyz/sign</loc>
-        <lastmod>2026-06-24</lastmod>
+        <loc>https://adasweep.xyz/cbor</loc>
+        <lastmod>2026-08-12</lastmod>
         <changefreq>monthly</changefreq>
-        <priority>0.6</priority>
+        <priority>0.7</priority>
     </url>
     <!-- Key Generator -->
     <url>
         <loc>https://adasweep.xyz/keygen</loc>
-        <lastmod>2026-08-01</lastmod>
+        <lastmod>2026-08-12</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
+    </url>
+    <!-- Data Signer -->
+    <url>
+        <loc>https://adasweep.xyz/sign</loc>
+        <lastmod>2026-08-12</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
     </url>
 </urlset>

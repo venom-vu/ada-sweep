@@ -17,11 +17,11 @@ const estimatedReclaimAda = computed(() => {
 
 // SEO Metadata
 useSeoMeta({
-  title: 'ADASweep — One-Click Cardano Wallet Cleanup & UTXO Optimizer',
-  ogTitle: 'ADASweep — One-Click Cardano Wallet Cleanup & UTXO Optimizer',
-  description: 'Reclaim locked ADA and clean up your Cardano wallet in one click. Safe, non-custodial UTXO consolidator and spam scanner to recover trapped ADA instantly.',
-  ogDescription: 'Reclaim locked ADA and clean up your Cardano wallet in one click. Safe, non-custodial UTXO consolidator and spam scanner to recover trapped ADA instantly.',
-  keywords: 'Cardano UTXO optimizer, reclaim locked ADA, Cardano wallet cleanup, optimize Cardano wallet, Cardano spam token burner, Cardano eUTXO consolidation',
+  title: 'ADASweep — Cardano Wallet Optimizer, UTXO Cleaner & Developer Tools',
+  ogTitle: 'ADASweep — Cardano Wallet Optimizer, UTXO Cleaner & Developer Tools',
+  description: 'Free, non-custodial Cardano toolkit: consolidate eUTXOs, reclaim locked ADA from spam & phishing tokens, decode CBOR transactions, sign data on-chain, and derive BIP-39 keys — all in your browser.',
+  ogDescription: 'Free, non-custodial Cardano toolkit: consolidate eUTXOs, reclaim locked ADA from spam & phishing tokens, decode CBOR transactions, sign data on-chain, and derive BIP-39 keys — all in your browser.',
+  keywords: 'Cardano UTXO consolidator, reclaim locked ADA, Cardano wallet cleanup, spam token burner, eUTXO optimizer, CBOR decoder Cardano, Cardano key generator, BIP-39 mnemonic Cardano, Cardano data signer, non-custodial Web3 tools, ADASweep',
 });
 
 // JSON-LD Structured Data
@@ -34,8 +34,8 @@ useHead({
         '@type': 'WebApplication',
         'name': 'ADASweep',
         'url': 'https://adasweep.xyz',
-        'description': 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA on Cardano.',
-        'applicationCategory': 'BusinessApplication, FinancialApplication',
+        'description': 'Free, non-custodial Cardano wallet toolkit to consolidate eUTXOs, reclaim locked ADA, remove spam tokens, decode CBOR, sign data, and derive BIP-39 keys — all client-side.',
+        'applicationCategory': 'BusinessApplication, FinancialApplication, DeveloperApplication',
         'operatingSystem': 'All',
         'offers': {
           '@type': 'Offer',
@@ -43,9 +43,14 @@ useHead({
           'priceCurrency': 'USD'
         },
         'featureList': [
-          'eUTXO Consolidation to reduce fee overhead',
-          'Spam & Phishing Token Isolation',
-          'ADA Salvaging by releasing standard deposits'
+          'Wallet Health Analyzer with DEX-powered spam detection',
+          'Phishing & Spam Token Isolation into a single quarantine UTXO',
+          'Full Token Burn to unspendable address',
+          'eUTXO Consolidation with automatic transaction batching',
+          'Reclaim locked ADA from fragmented UTXOs',
+          'CBOR Transaction Decoder with JSON and visual Block view',
+          'On-chain Data Signer via CIP-30 (COSE_Sign1 output)',
+          'BIP-39 Mnemonic Key Derivation for signing & verification keys'
         ]
       })
     },
@@ -60,7 +65,15 @@ useHead({
             'name': 'What is ADASweep?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'ADASweep is a client-side, non-custodial wallet optimization tool for Cardano. It helps you consolidate fragmented UTXOs, burn or isolate spam tokens, and recover trapped ADA.'
+              'text': 'ADASweep is a free, client-side, non-custodial Cardano toolkit. It helps you consolidate fragmented eUTXOs, isolate or burn spam/phishing tokens to reclaim locked ADA, decode CBOR transactions, sign data on-chain, and derive BIP-39 mnemonic keys — all running directly in your browser.'
+            }
+          },
+          {
+            '@type': 'Question',
+            'name': 'How does ADASweep reclaim locked ADA?',
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': 'Each UTXO containing native assets on Cardano must lock a minimum ADA deposit (typically 1.4–2 ADA per UTXO). ADASweep\'s Wallet Cleaner consolidates multiple spam/phishing token UTXOs into a single quarantine UTXO, reducing locked ADA to a minimum, or burns them entirely to release all locked capital.'
             }
           },
           {
@@ -68,7 +81,15 @@ useHead({
             'name': 'Is ADASweep safe to use?',
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': 'Yes, ADASweep is fully open-source and client-side only. It does not access your seed phrases or keys. All transactions are compiled in your browser and signed using standard wallet extensions like Eternl, Nami, or Lace.'
+              'text': 'Yes. ADASweep is fully open-source and runs 100% client-side in your browser. It never accesses your seed phrases or private keys. All transactions are compiled locally and signed through standard CIP-30 wallet extensions like Eternl, Nami, or Lace — requiring your explicit approval every time.'
+            }
+          },
+          {
+            '@type': 'Question',
+            'name': 'What wallets are supported?',
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': 'ADASweep supports any CIP-30 compatible Cardano wallet browser extension, including Eternl, Nami, Lace, Vespr, and others. It currently operates on the Preprod testnet.'
             }
           }
         ]
@@ -113,19 +134,19 @@ useHead({
       <h1
         class="mt-8 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.05] font-heading"
       >
-        One-Click Wallet Cleanup
+        Cardano Wallet Toolkit
         <span
           class="bg-gradient-to-r from-violet-400 via-indigo-400 to-amber-400 bg-clip-text text-transparent block sm:inline"
         >
-          for Cardano</span
+          Built for Power Users</span
         >
       </h1>
 
       <p
         class="mt-6 text-base sm:text-lg text-slate-400 max-w-2xl leading-relaxed font-sans"
       >
-        Safe. Non-custodial. Instant optimization. Merge fragmented dust
-        outputs, remove spam tokens, and recover trapped ADA instantly.
+        Clean spam tokens, consolidate eUTXOs, reclaim locked ADA, decode CBOR transactions,
+        sign data on-chain, and derive BIP-39 keys — all non-custodial, all in your browser.
       </p>
 
       <div
@@ -320,42 +341,16 @@ useHead({
           >Platform Features</span
         >
         <h2 class="text-3xl sm:text-4xl font-bold text-white font-heading">
-          High Performance UTXO Operations
+          Everything Your Cardano Wallet Needs
         </h2>
         <p class="text-slate-400 text-sm max-w-2xl mx-auto">
-          ADASweep works fully client-side to sweep junk, bundle native assets
-          safely, and release trapped ADA capital.
+          Five powerful utilities — from spam removal and UTXO consolidation to
+          on-chain signing and developer key derivation — all running client-side.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
-        >
-          <div
-            class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center"
-          >
-            <svg
-              class="w-5 h-5 text-violet-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </div>
-          <h3 class="font-bold text-white text-base">eUTXO Consolidation</h3>
-          <p class="text-slate-400 text-xs leading-relaxed">
-            Consolidate dozens of dust inputs under the 16KB size restriction.
-            Reduce blockchain storage clutter and slash future transaction
-            overhead.
-          </p>
-        </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Wallet Cleaner -->
         <div
           class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
         >
@@ -376,13 +371,42 @@ useHead({
               />
             </svg>
           </div>
-          <h3 class="font-bold text-white text-base">Metadata Shield</h3>
+          <h3 class="font-bold text-white text-base">Wallet Cleaner</h3>
           <p class="text-slate-400 text-xs leading-relaxed">
-            Isolate phishing tokens and malware native entries into single
-            isolated UTXOs. Safe media-decoupling prevents malicious script
-            injection.
+            Scans all wallet assets using DEX liquidity data to classify spam and phishing tokens.
+            Consolidate junk into a single quarantine UTXO or burn it entirely to reclaim locked ADA.
           </p>
         </div>
+
+        <!-- UTXO Optimizer -->
+        <div
+          class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
+        >
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-violet-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </div>
+          <h3 class="font-bold text-white text-base">eUTXO Consolidator</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Merge dozens of fragmented dust UTXOs automatically. Smart transaction batching
+            (max 40 inputs/tx) stays within Cardano's 16KB limit while slashing future fee overhead.
+          </p>
+        </div>
+
+        <!-- ADA Salvaging -->
         <div
           class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
         >
@@ -403,10 +427,94 @@ useHead({
               />
             </svg>
           </div>
-          <h3 class="font-bold text-white text-base">ADA Salvaging</h3>
+          <h3 class="font-bold text-white text-base">Reclaim Locked ADA</h3>
           <p class="text-slate-400 text-xs leading-relaxed">
-            Every isolated asset locks 1.4+ ADA. Grouping multi-assets releases
-            standard deposits back to your usable balance.
+            Every native-asset UTXO locks 1.4–2 ADA as a minimum deposit. Consolidating or burning
+            spam tokens releases that capital back to your spendable balance instantly.
+          </p>
+        </div>
+
+        <!-- CBOR Decoder -->
+        <div
+          class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
+        >
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-cyan-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+              />
+            </svg>
+          </div>
+          <h3 class="font-bold text-white text-base">CBOR Decoder</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Decode raw CBOR hex into readable JSON or a rich Block view. Supports Cardano
+            Transactions, UTXOs, Addresses, and Values — essential for on-chain debugging.
+          </p>
+        </div>
+
+        <!-- Data Signer -->
+        <div
+          class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
+        >
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-rose-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
+            </svg>
+          </div>
+          <h3 class="font-bold text-white text-base">On-Chain Data Signer</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Sign arbitrary text messages using CIP-30 via Eternl. Outputs COSE_Sign1 hex
+            and COSE_Key public key — ideal for off-chain authentication and proof-of-ownership.
+          </p>
+        </div>
+
+        <!-- Key Generator -->
+        <div
+          class="group fintech-card fintech-card-hover p-7 text-left space-y-4"
+        >
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-indigo-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              />
+            </svg>
+          </div>
+          <h3 class="font-bold text-white text-base">Key Generator</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Derive Cardano signing keys, verification keys, and key hashes from a BIP-39 mnemonic
+            with configurable account and key index — all computed locally, nothing sent to a server.
           </p>
         </div>
       </div>

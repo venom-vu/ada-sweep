@@ -22,21 +22,68 @@ const selectNetwork = (network: "mainnet" | "preprod") => {
     class="w-full border-t border-white/5 bg-slate-950/40 backdrop-blur-md py-10 px-6 sm:px-10 pb-28 md:pb-10 mt-16"
   >
     <div
-      class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8"
+      class="max-w-6xl mx-auto flex flex-col md:flex-row items-start justify-between gap-10"
     >
+      <!-- Brand + Description -->
       <div
-        class="flex flex-col items-center md:items-start text-center md:text-left gap-3 max-w-sm"
+        class="flex flex-col items-center md:items-start text-center md:text-left gap-3 max-w-xs"
       >
         <img src="/logo-text.png" class="h-16" alt="ADASweep Logo" />
         <p class="text-xs text-slate-500 leading-relaxed">
-          Optimize eUTXO structures and clean scam native assets/NFTs
-          automatically. Safe, secure, and non-custodial on Cardano.
+          Free, non-custodial Cardano toolkit — clean spam tokens, consolidate
+          eUTXOs, reclaim locked ADA, decode CBOR, sign data, and derive BIP-39 keys.
+          All client-side, all in your browser.
         </p>
         <span class="text-xs text-slate-600">
           &copy; 2026 ADASweep. All rights reserved.
         </span>
       </div>
 
+      <!-- Tools Navigation -->
+      <div class="flex flex-col items-center md:items-start gap-3">
+        <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+          Tools
+        </span>
+        <nav class="flex flex-col gap-2">
+          <NuxtLink
+            to="/cleaner"
+            class="text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 flex items-center gap-2"
+          >
+            <span class="w-1 h-1 rounded-full bg-amber-400/60"></span>
+            Wallet Cleaner
+          </NuxtLink>
+          <NuxtLink
+            to="/optimizer"
+            class="text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 flex items-center gap-2"
+          >
+            <span class="w-1 h-1 rounded-full bg-violet-400/60"></span>
+            UTXO Consolidator
+          </NuxtLink>
+          <NuxtLink
+            to="/cbor"
+            class="text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 flex items-center gap-2"
+          >
+            <span class="w-1 h-1 rounded-full bg-cyan-400/60"></span>
+            CBOR Decoder
+          </NuxtLink>
+          <NuxtLink
+            to="/sign"
+            class="text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 flex items-center gap-2"
+          >
+            <span class="w-1 h-1 rounded-full bg-rose-400/60"></span>
+            Data Signer
+          </NuxtLink>
+          <NuxtLink
+            to="/keygen"
+            class="text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 flex items-center gap-2"
+          >
+            <span class="w-1 h-1 rounded-full bg-indigo-400/60"></span>
+            Key Generator
+          </NuxtLink>
+        </nav>
+      </div>
+
+      <!-- Network Selector + Social -->
       <div class="flex flex-col items-center gap-5">
         <div class="relative">
           <button

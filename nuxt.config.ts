@@ -18,26 +18,36 @@ export default (defineNuxtConfig as any)({
 
   app: {
     head: {
-      title: 'ADASweep — One-Click Wallet Cleanup & Reclaim Trapped ADA for Cardano',
+      title: 'ADASweep — Cardano Wallet Optimizer: Reclaim ADA, Remove Spam & Developer Tools',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Optimize your Cardano wallet in one click. Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
-        { name: 'keywords', content: 'Cardano, UTXO consolidator, reclaim ADA, wallet optimizer, spam scanner, eUTXO optimization, Web3 tools' },
-        { name: 'robots', content: 'index, follow, max-image-preview:large' },
+        { name: 'description', content: 'ADASweep is a free, non-custodial Cardano wallet toolkit. Consolidate eUTXOs, reclaim locked ADA from spam tokens, decode CBOR transactions, sign data, and derive keys — all client-side in your browser.' },
+        { name: 'keywords', content: 'Cardano UTXO consolidator, reclaim locked ADA, Cardano wallet cleanup, spam token remover, eUTXO optimizer, CBOR decoder Cardano, Cardano key generator, BIP-39 mnemonic Cardano, Cardano data signer, non-custodial Web3 tools, ADASweep' },
+        { name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
+        { name: 'author', content: 'ADASweep' },
+        { name: 'theme-color', content: '#7c3aed' },
         // Open Graph
         { property: 'og:site_name', content: 'ADASweep' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
-        { property: 'og:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
+        { property: 'og:url', content: siteUrl },
+        { property: 'og:title', content: 'ADASweep — Cardano Wallet Optimizer & Developer Toolkit' },
+        { property: 'og:description', content: 'Free, non-custodial Cardano toolkit: consolidate eUTXOs, reclaim locked ADA from spam/phishing tokens, decode CBOR, sign data, and derive keys — all in your browser.' },
         { property: 'og:image', content: `${siteUrl}/og-image.webp` },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'ADASweep — Cardano Wallet Optimizer & Developer Toolkit' },
+        { property: 'og:locale', content: 'en_US' },
         // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'ADASweep — One-Click Wallet Cleanup for Cardano' },
-        { name: 'twitter:description', content: 'Safe, non-custodial UTXO consolidator and spam scanner to reclaim locked baseline ADA.' },
-        { name: 'twitter:image', content: `${siteUrl}/og-image.webp` }
+        { name: 'twitter:site', content: '@adasweep' },
+        { name: 'twitter:title', content: 'ADASweep — Cardano Wallet Optimizer & Developer Toolkit' },
+        { name: 'twitter:description', content: 'Free, non-custodial Cardano toolkit: consolidate eUTXOs, reclaim locked ADA from spam tokens, decode CBOR, sign data, and derive keys — all in your browser.' },
+        { name: 'twitter:image', content: `${siteUrl}/og-image.webp` },
+        { name: 'twitter:image:alt', content: 'ADASweep — Cardano Wallet Optimizer & Developer Toolkit' }
       ],
       link: [
+        { rel: 'canonical', href: siteUrl },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon/favicon.ico' },
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon/favicon-96x96.png' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon/favicon.svg' },
