@@ -101,6 +101,12 @@ useHead({
           description="Please connect your Cardano wallet to analyze your UTXO layout and consolidate fragmented dust outputs to save on future fees."
         />
       </div>
+      <template #fallback>
+        <WalletGate
+          title="Optimizer Access Required"
+          description="Please connect your Cardano wallet to analyze your UTXO layout and consolidate fragmented dust outputs to save on future fees."
+        />
+      </template>
     </ClientOnly>
   </div>
 </template>

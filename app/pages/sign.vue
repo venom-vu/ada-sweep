@@ -322,5 +322,11 @@ useHead({
         description="Please connect your Eternl wallet to sign plain text messages securely using your private keys (CIP-30 standard)."
       />
     </div>
+    <template #fallback>
+      <WalletGate
+        title="Signing Tool Locked"
+        description="Please connect your Eternl wallet to sign plain text messages securely using your private keys (CIP-30 standard)."
+      />
+    </template>
   </ClientOnly>
 </template>

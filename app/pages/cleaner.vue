@@ -113,6 +113,12 @@ onUnmounted(() => {
           description="Please connect your Cardano wallet to scan for scam/phishing tokens and burn junk native assets to recover locked min-ADA."
         />
       </div>
+      <template #fallback>
+        <WalletGate
+          title="Junk Cleaner Access Required"
+          description="Please connect your Cardano wallet to scan for scam/phishing tokens and burn junk native assets to recover locked min-ADA."
+        />
+      </template>
     </ClientOnly>
   </div>
 </template>

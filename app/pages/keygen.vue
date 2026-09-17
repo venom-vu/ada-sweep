@@ -7,46 +7,6 @@ definePageMeta({
   layout: "dashboard",
 });
 
-// SEO Metadata
-useSeoMeta({
-  title: 'Key Generator — Derive Cardano Keys from Mnemonic | ADASweep',
-  ogTitle: 'Key Generator — Derive Cardano Keys from Mnemonic | ADASweep',
-  description: 'Derive Cardano signing keys, verification keys, and key hashes from a BIP-39 mnemonic phrase. Client-side, non-custodial key derivation tool for developers and power users.',
-  ogDescription: 'Derive Cardano signing keys, verification keys, and key hashes from a BIP-39 mnemonic phrase. Client-side, non-custodial key derivation tool for developers and power users.',
-  keywords: 'Cardano key generator, derive Cardano keys, BIP-39 mnemonic Cardano, Cardano signing key, Cardano verification key, key hash Cardano, non-custodial key derivation',
-});
-
-// JSON-LD Structured Data
-useHead({
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebApplication',
-        'name': 'ADASweep Key Generator',
-        'url': 'https://adasweep.xyz/keygen',
-        'description': 'Client-side, non-custodial tool to derive Cardano signing keys, verification keys, and key hashes from a BIP-39 mnemonic phrase.',
-        'applicationCategory': 'DeveloperApplication, UtilitiesApplication',
-        'operatingSystem': 'All',
-        'offers': {
-          '@type': 'Offer',
-          'price': '0',
-          'priceCurrency': 'USD'
-        },
-        'featureList': [
-          'BIP-39 mnemonic to Cardano key derivation',
-          'Signing key (SK) CBOR hex export',
-          'Verification key (VK) CBOR hex export',
-          'Verification key hash (VKH) export',
-          'Account index & key index selection',
-          'Fully client-side — mnemonic never leaves your browser'
-        ]
-      })
-    }
-  ]
-});
-
 const mnemonicInput = ref("");
 const accountIndex = ref(0);
 const keyIndex = ref(0);
@@ -187,8 +147,7 @@ useHead({
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="flex flex-col gap-8 animate-fade-in font-sans">
+  <div class="flex flex-col gap-8 animate-fade-in font-sans">
       <h1 class="sr-only">Cardano Key Generator — Derive Keys from Mnemonic</h1>
 
       <!-- Security Warning Banner -->
@@ -599,6 +558,5 @@ useHead({
           </div>
         </div>
       </div>
-    </div>
-  </ClientOnly>
+  </div>
 </template>

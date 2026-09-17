@@ -7,7 +7,7 @@ const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://adasweep.xyz'
 export default (defineNuxtConfig as any)({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
-  ssr: false,
+  ssr: true,
 
   // Prerender all pages so Googlebot gets real HTML (not an empty SPA shell)
   nitro: {
@@ -47,7 +47,6 @@ export default (defineNuxtConfig as any)({
         { name: 'twitter:image:alt', content: 'ADASweep — Cardano Wallet Optimizer & Developer Toolkit' }
       ],
       link: [
-        { rel: 'canonical', href: siteUrl },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon/favicon.ico' },
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon/favicon-96x96.png' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon/favicon.svg' },

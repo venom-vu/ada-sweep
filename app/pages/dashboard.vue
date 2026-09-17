@@ -346,6 +346,12 @@ useHead({
           description="Please connect your Cardano wallet to view your health audit dashboard, analyze UTXO fragmentation, and inspect your assets."
         />
       </div>
+      <template #fallback>
+        <WalletGate
+          title="Dashboard Access Required"
+          description="Please connect your Cardano wallet to view your health audit dashboard, analyze UTXO fragmentation, and inspect your assets."
+        />
+      </template>
     </ClientOnly>
   </div>
 </template>
