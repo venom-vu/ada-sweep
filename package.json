@@ -1,6 +1,7 @@
 {
   "name": "clean-cardano-wallet",
   "type": "module",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "build": "nuxt build",

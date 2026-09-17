@@ -2,6 +2,7 @@
 
 [![Cardano](https://img.shields.io/badge/Cardano-ADA-blue?logo=cardano)](https://cardano.org/)
 [![Framework](https://img.shields.io/badge/Framework-Nuxt_4-00DC82?logo=nuxt.js)](https://nuxt.com/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 **ADASweep** is a free, non-custodial, client-side Web3 toolkit for the Cardano ecosystem. It helps users analyze wallet health, remove spam and phishing tokens, reclaim locked ADA, consolidate fragmented eUTXOs, decode CBOR transactions, sign data on-chain, and derive cryptographic keys from BIP-39 mnemonics — all running directly in the browser with no server involvement.
 
@@ -87,4 +88,11 @@ ADASweep runs **100% Client-Side** (`ssr: false` in [nuxt.config.ts](./nuxt.conf
 
 - **Client-Side Only**: All execution happens directly on your browser. Your seed phrases or private keys are never accessed or stored.
 - **Explicit Consent**: Every wallet optimization or token-burning transaction requires explicit CIP-30 extension signing. No automatic or hidden transfers.
-- **Open Source**: The full codebase is auditable. MIT Licensed.
+- **Open Source**: The full codebase is auditable. Apache-2.0 Licensed.
+
+---
+
+## 📄 License
+
+Distributed under the Apache 2.0 License. See [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE) for details.
+
