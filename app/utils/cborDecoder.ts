@@ -58,7 +58,10 @@ export async function decodeCardanoCbor(
         txHash = fixedTx.transaction_hash().to_hex();
         fixedTx.free();
       } catch (hashErr) {
-        console.error("Failed to compute tx hash via FixedTransaction:", hashErr);
+        console.error(
+          "Failed to compute tx hash via FixedTransaction:",
+          hashErr,
+        );
       }
 
       // Enrich vkeys with keyHash and bech32 derived fields
