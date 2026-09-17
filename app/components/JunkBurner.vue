@@ -4,8 +4,6 @@ import { useWalletStore } from "~/stores/wallet";
 import { useCleanerStore } from "~/stores/cleaner";
 import { calculateMinAda } from "~/utils/minAdaCalculator";
 import { fetchProtocolParams } from "~/utils/protocolParams";
-import { TxBuilder } from "@hydra-sdk/transaction";
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 
 const props = defineProps<{
   selectedJunk: string[];
@@ -45,7 +43,8 @@ const blockfrostKey = computed(() => {
     : (config.public.blockfrostApiKeyPreprod as string);
 });
 
-function getDeadAddress(): string {
+async function getDeadAddress(): Promise<string> {
+  const { CardanoWASM } = await import("@hydra-sdk/cardano-wasm");
   const network = walletStore.networkId === 1 ? 1 : 0;
   const zeroHash = "00000000000000000000000000000000000000000000000000000000";
   const keyHash = CardanoWASM.Ed25519KeyHash.from_hex(zeroHash);
@@ -161,6 +160,9 @@ const feePercentage = computed(() => {
       }
     }
 
+    const { CardanoWASM } = await import("@hydra-sdk/cardano-wasm");
+    const { TxBuilder } = await import("@hydra-sdk/transaction");
+
     const txBuilder = new TxBuilder({
       isHydra: false,
       params: { coinsPerUtxoSize: coinsPerUtxoSize.value },
@@ -196,7 +198,7 @@ const feePercentage = computed(() => {
 
     const targetAddress =
       cleaningMode.value === "burn"
-        ? getDeadAddress()
+        ? await getDeadAddress()
         : walletStore.walletAddress;
     const outputAmount: any[] = [];
     selectedAssetsDetails.value.forEach((a) => {

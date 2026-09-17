@@ -1,7 +1,5 @@
 import { useWalletStore } from "./wallet";
 import { chunkUtxos, type UTXO } from "~/utils/transactionBatcher";
-import { TxBuilder } from "@hydra-sdk/transaction";
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 
 export const useOptimizerStore = defineStore("optimizer", () => {
   const walletStore = useWalletStore();
@@ -114,17 +112,18 @@ export const useOptimizerStore = defineStore("optimizer", () => {
 
   // Helper to build CardanoWASM.MultiAsset from grouped assets
   const buildMultiAsset = (
+    wasm: any,
     grouped: Record<string, Record<string, number>>,
     fromHex: (hex: string) => Uint8Array
   ) => {
-    const multiAsset = CardanoWASM.MultiAsset.new();
+    const multiAsset = wasm.MultiAsset.new();
     Object.entries(grouped).forEach(([policyId, nameQtyMap]) => {
-      const policyHash = CardanoWASM.ScriptHash.from_hex(policyId);
-      const assets = CardanoWASM.Assets.new();
+      const policyHash = wasm.ScriptHash.from_hex(policyId);
+      const assets = wasm.Assets.new();
       Object.entries(nameQtyMap).forEach(([assetNameHex, qty]) => {
         assets.insert(
-          CardanoWASM.AssetName.new(fromHex(assetNameHex)),
-          CardanoWASM.BigNum.from_str(qty.toString()),
+          wasm.AssetName.new(fromHex(assetNameHex)),
+          wasm.BigNum.from_str(qty.toString()),
         );
       });
       multiAsset.insert(policyHash, assets);
@@ -138,6 +137,10 @@ export const useOptimizerStore = defineStore("optimizer", () => {
     if (!walletStore.walletApi) {
       throw new Error("Wallet not connected");
     }
+
+    // Lazy-load WASM & TxBuilder (client-side only)
+    const { CardanoWASM } = await import("@hydra-sdk/cardano-wasm");
+    const { TxBuilder } = await import("@hydra-sdk/transaction");
 
     isExecuting.value = true;
     currentBatchIndex.value = 0;
@@ -172,7 +175,7 @@ export const useOptimizerStore = defineStore("optimizer", () => {
           );
           if (Object.keys(utxo.assets).length > 0) {
             const grouped = groupAssetsByPolicy(utxo.assets);
-            const multiAsset = buildMultiAsset(grouped, walletStore.fromHex);
+            const multiAsset = buildMultiAsset(CardanoWASM, grouped, walletStore.fromHex);
             value.set_multiasset(multiAsset);
           }
 
@@ -196,7 +199,7 @@ export const useOptimizerStore = defineStore("optimizer", () => {
         if (Object.keys(aggregatedAssets).length > 0) {
           const txOutputValue = CardanoWASM.Value.new(baseLovelace);
           const grouped = groupAssetsByPolicy(aggregatedAssets);
-          const multiAsset = buildMultiAsset(grouped, walletStore.fromHex);
+          const multiAsset = buildMultiAsset(CardanoWASM, grouped, walletStore.fromHex);
           txOutputValue.set_multiasset(multiAsset);
           
           const txOutput = CardanoWASM.TransactionOutput.new(

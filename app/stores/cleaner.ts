@@ -92,17 +92,19 @@ export const useCleanerStore = defineStore("cleaner", () => {
     }
   }
 
-  // Clean corrupted data from previous bug (watch passed unwrapped array)
-  try {
-    const w = localStorage.getItem(whitelistKey.value);
-    if (w === "undefined" || w === "null")
-      localStorage.removeItem(whitelistKey.value);
-    const b = localStorage.getItem(blacklistKey.value);
-    if (b === "undefined" || b === "null")
-      localStorage.removeItem(blacklistKey.value);
-  } catch {}
-  readList(whitelistKey.value, localWhitelistOverrides);
-  readList(blacklistKey.value, localBlacklistOverrides);
+  if (typeof window !== "undefined") {
+    // Clean corrupted data from previous bug (watch passed unwrapped array)
+    try {
+      const w = localStorage.getItem(whitelistKey.value);
+      if (w === "undefined" || w === "null")
+        localStorage.removeItem(whitelistKey.value);
+      const b = localStorage.getItem(blacklistKey.value);
+      if (b === "undefined" || b === "null")
+        localStorage.removeItem(blacklistKey.value);
+    } catch {}
+    readList(whitelistKey.value, localWhitelistOverrides);
+    readList(blacklistKey.value, localBlacklistOverrides);
+  }
 
   watch(
     localWhitelistOverrides,

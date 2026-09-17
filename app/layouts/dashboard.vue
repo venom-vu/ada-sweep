@@ -46,6 +46,9 @@ const pageTitle = computed(() => {
         </div>
         <ClientOnly>
           <WalletHeaderInfo />
+          <template #fallback>
+            <div class="w-[140px] h-10 rounded-xl bg-white/5 animate-pulse"></div>
+          </template>
         </ClientOnly>
       </header>
 

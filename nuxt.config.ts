@@ -9,11 +9,18 @@ export default (defineNuxtConfig as any)({
   devtools: { enabled: false },
   ssr: true,
 
-  // Prerender all pages so Googlebot gets real HTML (not an empty SPA shell)
+  // Prerender only public SEO pages — wallet-gated pages use SPA mode via routeRules
   nitro: {
     prerender: {
-      routes: ['/', '/cbor', '/sign', '/keygen', '/optimizer', '/cleaner', '/dashboard']
+      routes: ['/', '/cbor', '/sign', '/keygen']
     }
+  },
+
+  // Wallet-gated pages: no SSR, render fully on client
+  routeRules: {
+    '/optimizer': { ssr: false },
+    '/cleaner': { ssr: false },
+    '/dashboard': { ssr: false },
   },
 
   app: {

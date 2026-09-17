@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { toast } from "vue-sonner";
-import { KeysUtils } from "@hydra-sdk/core";
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 
 definePageMeta({
   layout: "dashboard",
@@ -48,6 +46,10 @@ const runDerive = () => {
           `Mnemonic must have at least 12 words. Got: ${words.length}.`,
         );
       }
+
+      // Lazy-load WASM SDKs (client-side only, guarded by typeof window check above)
+      const { KeysUtils } = await import("@hydra-sdk/core");
+      const { CardanoWASM } = await import("@hydra-sdk/cardano-wasm");
 
       const { sk, vk } = KeysUtils.mnemonicToCliKey(
         words,

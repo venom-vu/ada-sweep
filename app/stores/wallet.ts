@@ -1,6 +1,13 @@
 import type { UTXO } from "~/utils/transactionBatcher";
 import { toast } from "vue-sonner";
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
+// WASM must never be imported at top level (SSR-safe pattern per AGENTS.md)
+let _wasm: any = null;
+async function getWasm() {
+  if (!_wasm && typeof window !== "undefined") {
+    _wasm = (await import("@hydra-sdk/cardano-wasm")).CardanoWASM;
+  }
+  return _wasm as typeof import("@hydra-sdk/cardano-wasm").CardanoWASM;
+}
 
 declare global {
   interface Window {
@@ -160,7 +167,7 @@ export const useWalletStore = defineStore("wallet", () => {
 
       // Fetch Address (Standard unused or change address)
       const changeAddrHex = await api.getChangeAddress();
-      walletAddress.value = decodeAddress(changeAddrHex);
+      walletAddress.value = await decodeAddress(changeAddrHex);
 
       isConnected.value = true;
 
@@ -241,7 +248,7 @@ export const useWalletStore = defineStore("wallet", () => {
 
       for (const hex of rawHexUtxos) {
         try {
-          const parsed = parseCBORUtxo(hex);
+          const parsed = await parseCBORUtxo(hex);
           if (parsed) {
             parsedUtxos.push(parsed);
           }
@@ -258,9 +265,11 @@ export const useWalletStore = defineStore("wallet", () => {
   };
 
   // Address hex decoder helper (CIP-30 is hex format, returns standard addr1...)
-  const decodeAddress = (hexAddr: string): string => {
+  const decodeAddress = async (hexAddr: string): Promise<string> => {
     try {
-      const addr = CardanoWASM.Address.from_bytes(fromHex(hexAddr));
+      const wasm = await getWasm();
+      if (!wasm) return hexAddr;
+      const addr = wasm.Address.from_bytes(fromHex(hexAddr));
       return addr.to_bech32();
     } catch (e) {
       console.error("Error decoding address:", e);
@@ -269,10 +278,12 @@ export const useWalletStore = defineStore("wallet", () => {
   };
 
   // Pure Client-side CBOR UTXO parser fallback
-  const parseCBORUtxo = (cborHex: string): UTXO | null => {
+  const parseCBORUtxo = async (cborHex: string): Promise<UTXO | null> => {
     try {
+      const wasm = await getWasm();
+      if (!wasm) return null;
       // Decode CBOR bytes of TransactionUnspentOutput using Emurgo CSL WASM
-      const utxo = CardanoWASM.TransactionUnspentOutput.from_bytes(
+      const utxo = wasm.TransactionUnspentOutput.from_bytes(
         fromHex(cborHex),
       );
 

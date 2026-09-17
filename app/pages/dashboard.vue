@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useWalletStore } from "~/stores/wallet";
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
 import { toast } from "vue-sonner";
 import WalletHealth from "~/components/WalletHealth.vue";
 
@@ -29,6 +28,7 @@ const deriveWalletKeyInfo = async () => {
   }
   isDeriving.value = true;
   try {
+    const { CardanoWASM } = await import("@hydra-sdk/cardano-wasm");
     const fromHex = walletStore.fromHex;
 
     const changeAddrHex = await walletStore.walletApi.getChangeAddress();

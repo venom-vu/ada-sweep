@@ -1,4 +1,11 @@
-import { CardanoWASM } from "@hydra-sdk/cardano-wasm";
+// WASM must never be imported at top level (SSR-safe pattern per AGENTS.md)
+let _wasm: any = null;
+async function getWasm() {
+  if (!_wasm && typeof window !== "undefined") {
+    _wasm = (await import("@hydra-sdk/cardano-wasm")).CardanoWASM;
+  }
+  return _wasm as typeof import("@hydra-sdk/cardano-wasm").CardanoWASM;
+}
 
 export interface DecodedResult {
   type: "Transaction" | "UTXO" | "Address" | "Value";
@@ -31,6 +38,11 @@ export function toHex(bytes: Uint8Array): string {
 export async function decodeCardanoCbor(
   hexString: string,
 ): Promise<DecodedResult> {
+  const CardanoWASM = await getWasm();
+  if (!CardanoWASM) {
+    throw new Error("CBOR decoder is only available in the browser");
+  }
+
   let bytes: Uint8Array;
   try {
     bytes = fromHex(hexString);
